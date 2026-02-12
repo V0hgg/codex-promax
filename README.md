@@ -26,7 +26,8 @@ execplans init
 
 - CI runs on pull requests and pushes to `main` via `.github/workflows/ci.yml`.
 - To cut a release, run the `release` workflow manually and select `patch`, `minor`, or `major`.
-- Publishing to npm is triggered by pushing tags matching `v*.*.*` and requires `NPM_TOKEN` repository secret.
+- The `release` workflow now bumps version, updates changelog, pushes commit+tag, and publishes to npm in the same run.
+- Publishing requires `NPM_TOKEN` repository secret.
 
 Local release helpers:
 

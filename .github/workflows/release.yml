@@ -12,17 +12,13 @@ on:
           - patch
           - minor
           - major
-  push:
-    tags:
-      - v*.*.*
 
 permissions:
   contents: write
   id-token: write
 
 jobs:
-  cut-release:
-    if: github.event_name == 'workflow_dispatch'
+  release:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -36,6 +32,7 @@ jobs:
         with:
           node-version: 20
           cache: npm
+          registry-url: https://registry.npmjs.org
 
       - name: Install dependencies
         run: npm ci
@@ -45,29 +42,12 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
 
+      - name: Verify package
+        run: npm run ci
+
       - name: Bump version and update changelog
         run: |
           npm version "${{ github.event.inputs.release_type }}" -m "chore(release): %s"
-
-  publish:
-    if: github.event_name == 'push'
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Setup Node
-        uses: actions/setup-node@v4
-        with:
-          node-version: 20
-          cache: npm
-          registry-url: https://registry.npmjs.org
-
-      - name: Install dependencies
-        run: npm ci
-
-      - name: Verify package
-        run: npm run ci
 
       - name: Ensure NPM_TOKEN exists
         run: |
