@@ -1,0 +1,129 @@
+import fs from "node:fs";
+import path from "node:path";
+
+import { describe, expect, it } from "vitest";
+
+import { runInit } from "../src/commands/init";
+import { readTemplate } from "../src/core/templates";
+import { captureIo, createTempWorkspace, initGitMarker, readFile, snapshotFileTree, writeFile } from "./helpers";
+
+describe("init", () => {
+  it("creates expected structure in empty folder for assistants=all", async () => {
+    const root = createTempWorkspace();
+    initGitMarker(root);
+
+    const io = captureIo();
+    const code = await runInit({ root }, io.io);
+
+    expect(code).toBe(0);
+    expect(fs.existsSync(path.join(root, "AGENTS.md"))).toBe(true);
+    expect(fs.existsSync(path.join(root, "CLAUDE.md"))).toBe(true);
+    expect(fs.existsSync(path.join(root, ".agent", "PLANS.md"))).toBe(true);
+    expect(fs.existsSync(path.join(root, ".agent", "execplans", "README.md"))).toBe(true);
+    expect(
+      fs.existsSync(path.join(root, ".agents", "skills", "execplan-create", "SKILL.md")),
+    ).toBe(true);
+    expect(
+      fs.existsSync(path.join(root, ".agents", "skills", "execplan-execute", "SKILL.md")),
+    ).toBe(true);
+
+    const agents = readFile(root, "AGENTS.md");
+    expect(agents).toContain("<!-- execplans:begin -->");
+    expect(agents).toContain("<!-- execplans:end -->");
+
+    const skill = readFile(root, ".agents/skills/execplan-create/SKILL.md");
+    expect(skill).toContain("name: execplan-create");
+    expect(skill).toContain("description:");
+
+    expect(io.lines.some((line) => line.startsWith("Create:"))).toBe(true);
+  });
+
+  it("is idempotent on rerun without force", async () => {
+    const root = createTempWorkspace();
+    initGitMarker(root);
+
+    await runInit({ root });
+    const before = snapshotFileTree(root);
+
+    await runInit({ root });
+    const after = snapshotFileTree(root);
+
+    expect(after).toEqual(before);
+  });
+
+  it("preserves AGENTS custom text while appending/updating managed block", async () => {
+    const root = createTempWorkspace();
+    initGitMarker(root);
+
+    writeFile(root, "AGENTS.md", "# Team Rules\n\nDo not remove this line.\n");
+
+    await runInit({ root, assistants: "codex" });
+    const first = readFile(root, "AGENTS.md");
+
+    expect(first).toContain("Do not remove this line.");
+    expect(first).toContain("<!-- execplans:begin -->");
+    expect(first).toContain("<!-- execplans:end -->");
+
+    await runInit({ root, assistants: "codex" });
+    const second = readFile(root, "AGENTS.md");
+
+    expect(second).toContain("Do not remove this line.");
+    expect(second.match(/<!-- execplans:begin -->/g)?.length).toBe(1);
+  });
+
+  it("updates only the managed region when markers already exist", async () => {
+    const root = createTempWorkspace();
+    initGitMarker(root);
+
+    writeFile(
+      root,
+      "AGENTS.md",
+      [
+        "# Custom Header",
+        "",
+        "<!-- execplans:begin -->",
+        "old block",
+        "<!-- execplans:end -->",
+        "",
+        "Footer note",
+        "",
+      ].join("\n"),
+    );
+
+    await runInit({ root, assistants: "codex" });
+
+    const content = readFile(root, "AGENTS.md");
+    expect(content.startsWith("# Custom Header")).toBe(true);
+    expect(content).toContain("Footer note");
+    expect(content).toContain(
+      "When writing complex features or significant refactors, use an ExecPlan",
+    );
+    expect(content).not.toContain("old block");
+  });
+
+  it("leaves existing PLANS unchanged unless force", async () => {
+    const root = createTempWorkspace();
+    initGitMarker(root);
+
+    writeFile(root, ".agent/PLANS.md", "# Custom Plans\n");
+
+    await runInit({ root });
+    const withoutForce = readFile(root, ".agent/PLANS.md");
+    expect(withoutForce).toBe("# Custom Plans\n");
+
+    await runInit({ root, force: true });
+    const withForce = readFile(root, ".agent/PLANS.md");
+    expect(withForce).toBe(readTemplate("PLANS.md"));
+  });
+
+  it("supports dry-run without writing files", async () => {
+    const root = createTempWorkspace();
+    initGitMarker(root);
+
+    const io = captureIo();
+    await runInit({ root, dryRun: true }, io.io);
+
+    expect(io.lines.some((line) => line.startsWith("Would Create:"))).toBe(true);
+    expect(fs.existsSync(path.join(root, "AGENTS.md"))).toBe(false);
+  });
+});
