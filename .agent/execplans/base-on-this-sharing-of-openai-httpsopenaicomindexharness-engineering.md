@@ -27,7 +27,7 @@ This plan is complete when all of the following are true and proven with command
 - [x] (2026-02-17 09:04Z) Mapped current extension points (`src/cli.ts`, `src/core/config.ts`, `src/commands/init.ts`, `src/core/templates.ts`, `src/core/fsPlan.ts`, `src/core/doctorChecks.ts`, and tests).
 - [x] (2026-02-17 09:04Z) Drafted a complete, self-contained ExecPlan with milestones, validation commands, and explicit Definition of Done.
 - [x] (2026-02-17 09:17Z) Implemented Milestone 1: added preset parsing (`standard`, `codex-max`), CLI/config wiring for `--preset`, template-tree copy utility, init preset dispatch, and codex-max dry-run proof (`Would Create: .codex/config.toml`).
-- [ ] Implement Milestone 2 (full docs topology scaffold and placeholders).
+- [x] (2026-02-17 09:18Z) Implemented Milestone 2: added codex-max `ARCHITECTURE.md` and full `docs/` template topology, plus init tests for path presence and codex-max idempotence.
 - [ ] Implement Milestone 3 (worktree-local UI legibility harness with Chrome DevTools MCP wiring and skills).
 - [ ] Implement Milestone 4 (worktree-local observability stack and observability MCP adapter).
 - [ ] Implement Milestone 5 (doctor coverage, README/docs updates, and automated tests).
@@ -46,6 +46,9 @@ This plan is complete when all of the following are true and proven with command
 
 - Observation: A single template-tree primitive is sufficient for preset scaffolding; explicit recursive directory creation in init code is unnecessary because file writes already create parent directories.
   Evidence: `applyTemplateEntries` + `writeIfMissingOrForce` created `.codex/config.toml` from `templates/presets/codex-max/.codex/config.toml` in both test and dry-run proof.
+
+- Observation: Empty milestone directories (`docs/exec-plans/active` and `docs/exec-plans/completed`) must include placeholder files to remain visible in generated tree validations.
+  Evidence: `.gitkeep` files appeared in `find ... -type f` output and made directory existence check deterministic.
 
 ## Decision Log
 
@@ -69,9 +72,13 @@ This plan is complete when all of the following are true and proven with command
   Rationale: This keeps the scaffold declarative and makes later milestones mostly template additions rather than imperative code branches.
   Date/Author: 2026-02-17 / Codex
 
+- Decision: Keep codex-max docs templates intentionally minimal but structured, with starter headings and short instructions rather than long policy text.
+  Rationale: This gives novices immediate orientation while avoiding opinionated content that would drift from project-specific reality.
+  Date/Author: 2026-02-17 / Codex
+
 ## Outcomes & Retrospective
 
-Milestone 1 complete. The project now supports preset-aware scaffolding and a reusable template copy path, which is the required foundation for the larger codex-max harness. Validation passed via `npm test -- test/init.test.ts`, `npm run typecheck`, and dry-run evidence showing codex-max-specific actions. Remaining milestones still carry all user-facing harness functionality.
+Milestones 1 and 2 are complete. The scaffold can now materialize the requested docs topology in a fresh repository through `--preset codex-max`, and reruns remain idempotent without `--force`. Validation evidence includes passing `test/init.test.ts`, successful build, and a clean temp-repo `find` output listing all expected docs files.
 
 ## Context and Orientation
 
@@ -355,3 +362,4 @@ Dependency expectations:
 
 2026-02-17 (Codex): Initial creation of this ExecPlan to satisfy the requested OpenAI-style harness scaffold scope, including docs topology, MCP wiring, worktree isolation, observability stack, explicit milestone validation commands, and cross-repo installation proof.
 2026-02-17 (Codex): Updated after Milestone 1 implementation to record completed progress, new design decisions, milestone outcomes, and evidence-backed discoveries.
+2026-02-17 (Codex): Updated after Milestone 2 implementation to record docs topology scaffold completion, idempotence coverage, and fresh-repo validation evidence.

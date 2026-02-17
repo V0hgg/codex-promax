@@ -1,0 +1,2 @@
+uv reference notes for coding agents.
+Replace this placeholder with environment and dependency management conventions.

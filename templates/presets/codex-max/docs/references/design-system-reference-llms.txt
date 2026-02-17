@@ -1,0 +1,2 @@
+Design system reference notes for coding agents.
+Replace this placeholder with project-specific component and token references.

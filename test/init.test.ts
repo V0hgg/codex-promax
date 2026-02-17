@@ -134,6 +134,32 @@ describe("init", () => {
     await runInit({ root, preset: "codex-max" });
 
     expect(fs.existsSync(path.join(root, ".codex", "config.toml"))).toBe(true);
+    expect(fs.existsSync(path.join(root, "ARCHITECTURE.md"))).toBe(true);
+
+    const expectedCodexMaxPaths = [
+      "docs/design-docs/index.md",
+      "docs/design-docs/core-beliefs.md",
+      "docs/exec-plans/active/.gitkeep",
+      "docs/exec-plans/completed/.gitkeep",
+      "docs/exec-plans/tech-debt-tracker.md",
+      "docs/generated/db-schema.md",
+      "docs/product-specs/index.md",
+      "docs/product-specs/new-user-onboarding.md",
+      "docs/references/design-system-reference-llms.txt",
+      "docs/references/nixpacks-llms.txt",
+      "docs/references/uv-llms.txt",
+      "docs/DESIGN.md",
+      "docs/FRONTEND.md",
+      "docs/PLANS.md",
+      "docs/PRODUCT_SENSE.md",
+      "docs/QUALITY_SCORE.md",
+      "docs/RELIABILITY.md",
+      "docs/SECURITY.md",
+    ];
+
+    for (const relativePath of expectedCodexMaxPaths) {
+      expect(fs.existsSync(path.join(root, relativePath))).toBe(true);
+    }
   });
 
   it("shows codex-max preset actions in dry-run", async () => {
@@ -144,5 +170,18 @@ describe("init", () => {
     await runInit({ root, preset: "codex-max", dryRun: true }, io.io);
 
     expect(io.lines.some((line) => line.includes(".codex/config.toml"))).toBe(true);
+  });
+
+  it("is idempotent for codex-max on rerun without force", async () => {
+    const root = createTempWorkspace();
+    initGitMarker(root);
+
+    await runInit({ root, preset: "codex-max" });
+    const before = snapshotFileTree(root);
+
+    await runInit({ root, preset: "codex-max" });
+    const after = snapshotFileTree(root);
+
+    expect(after).toEqual(before);
   });
 });

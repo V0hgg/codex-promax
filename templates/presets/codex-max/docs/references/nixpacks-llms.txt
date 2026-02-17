@@ -1,0 +1,2 @@
+Nixpacks reference notes for coding agents.
+Replace this placeholder with build and runtime conventions used by this project.
