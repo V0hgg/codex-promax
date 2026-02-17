@@ -24,13 +24,7 @@ npm i -g codex-promax
 codex-promax init
 ```
 
-## Codex-max preset
-
-Use the `codex-max` preset to scaffold the expanded docs structure and Codex harness files:
-
-```bash
-codex-promax init --preset codex-max
-```
+`codex-promax init` now scaffolds the full codex-max package by default, including docs topology, docker observability stack, and MCP config.
 
 After scaffold, boot the worktree-local runtime used by UI legibility workflows:
 
@@ -44,7 +38,13 @@ After scaffold, boot the worktree-local runtime used by UI legibility workflows:
 Validate codex-max scaffold health:
 
 ```bash
-codex-promax doctor --preset codex-max
+codex-promax doctor
+```
+
+If you need the older minimal scaffold, opt in explicitly:
+
+```bash
+codex-promax init --preset standard
 ```
 
 Run local observability smoke checks (requires Docker daemon access):

@@ -8,7 +8,7 @@ import { readTemplate } from "../src/core/templates";
 import { captureIo, createTempWorkspace, initGitMarker, readFile, snapshotFileTree, writeFile } from "./helpers";
 
 describe("init", () => {
-  it("creates expected structure in empty folder for assistants=all", async () => {
+  it("creates expected structure in empty folder for assistants=all with codex-max defaults", async () => {
     const root = createTempWorkspace();
     initGitMarker(root);
 
@@ -18,6 +18,8 @@ describe("init", () => {
     expect(code).toBe(0);
     expect(fs.existsSync(path.join(root, "AGENTS.md"))).toBe(true);
     expect(fs.existsSync(path.join(root, "CLAUDE.md"))).toBe(true);
+    expect(fs.existsSync(path.join(root, ".codex", "config.toml"))).toBe(true);
+    expect(fs.existsSync(path.join(root, ".agent", "harness", "observability", "docker-compose.yml"))).toBe(true);
     expect(fs.existsSync(path.join(root, ".agent", "PLANS.md"))).toBe(true);
     expect(fs.existsSync(path.join(root, ".agent", "execplans", "README.md"))).toBe(true);
     expect(
@@ -36,6 +38,17 @@ describe("init", () => {
     expect(skill).toContain("description:");
 
     expect(io.lines.some((line) => line.startsWith("Create:"))).toBe(true);
+  });
+
+  it("supports opting into the minimal standard preset explicitly", async () => {
+    const root = createTempWorkspace();
+    initGitMarker(root);
+
+    await runInit({ root, preset: "standard" });
+
+    expect(fs.existsSync(path.join(root, ".codex", "config.toml"))).toBe(false);
+    expect(fs.existsSync(path.join(root, "ARCHITECTURE.md"))).toBe(false);
+    expect(fs.existsSync(path.join(root, "docs"))).toBe(false);
   });
 
   it("is idempotent on rerun without force", async () => {

@@ -5,7 +5,7 @@ This folder contains an isolated end-to-end harness that verifies the full codex
 What it verifies:
 
 - package install (`local` tarball build or `npm` latest)
-- `init --preset codex-max` and `doctor --preset codex-max`
+- `init` and `doctor` (full codex-max defaults)
 - generated docs topology and MCP config blocks
 - worktree runtime scripts (`up`/`status`/`down`)
 - observability stack startup (Vector + Victoria Logs/Metrics/Traces)

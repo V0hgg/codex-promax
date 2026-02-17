@@ -7,6 +7,7 @@ import path from "node:path";
 import { runDoctor } from "./commands/doctor";
 import { runInit } from "./commands/init";
 import { runPromptExec, runPromptPlan } from "./commands/prompt";
+import { DEFAULT_PRESET } from "./core/presets";
 
 interface CommonCliOptions {
   root?: string;
@@ -30,7 +31,9 @@ function addCommonOptions(command: Command): Command {
         "assistant targets: codex,claude,augment,all",
       ).default("all"),
     )
-    .addOption(new Option("--preset <name>", "init preset: standard,codex-max").default("standard"))
+    .addOption(
+      new Option("--preset <name>", "preset: codex-max,standard").default(DEFAULT_PRESET),
+    )
     .addOption(new Option("--agents-file <name>", "AGENTS.md filename").default("AGENTS.md"))
     .addOption(new Option("--claude-file <name>", "CLAUDE.md filename").default("CLAUDE.md"))
     .addOption(new Option("--plan-dir <path>", "path to .agent directory").default(".agent"))

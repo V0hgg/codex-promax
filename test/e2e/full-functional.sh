@@ -157,8 +157,8 @@ main() {
   fi
 
   log "Running init + doctor"
-  npx --yes --prefix "$TARGET_REPO" "$PACKAGE_NAME" init --root "$TARGET_REPO" --preset codex-max
-  npx --yes --prefix "$TARGET_REPO" "$PACKAGE_NAME" doctor --root "$TARGET_REPO" --preset codex-max
+  npx --yes --prefix "$TARGET_REPO" "$PACKAGE_NAME" init --root "$TARGET_REPO"
+  npx --yes --prefix "$TARGET_REPO" "$PACKAGE_NAME" doctor --root "$TARGET_REPO"
 
   log "Validating generated docs and MCP config"
   verify_docs_structure

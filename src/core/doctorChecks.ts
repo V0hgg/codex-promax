@@ -151,7 +151,7 @@ export function runDoctorChecks(options: DoctorCheckOptions): string[] {
     for (const relativePath of CODEX_MAX_REQUIRED_RELATIVE_PATHS) {
       const absolutePath = path.resolve(options.root, relativePath);
       if (!fs.existsSync(absolutePath)) {
-        fixes.push(`Fix: Create ${absolutePath} (run \`codex-promax init --preset codex-max\`).`);
+        fixes.push(`Fix: Create ${absolutePath} (run \`codex-promax init\`).`);
       }
     }
 
@@ -160,13 +160,13 @@ export function runDoctorChecks(options: DoctorCheckOptions): string[] {
       const codexConfig = fs.readFileSync(codexConfigPath, "utf8");
       if (!codexConfig.includes("[mcp_servers.chrome_devtools]")) {
         fixes.push(
-          `Fix: Add [mcp_servers.chrome_devtools] block to ${codexConfigPath} (or rerun \`codex-promax init --preset codex-max\`).`,
+          `Fix: Add [mcp_servers.chrome_devtools] block to ${codexConfigPath} (or rerun \`codex-promax init\`).`,
         );
       }
 
       if (!codexConfig.includes("[mcp_servers.observability]")) {
         fixes.push(
-          `Fix: Add [mcp_servers.observability] block to ${codexConfigPath} (or rerun \`codex-promax init --preset codex-max\`).`,
+          `Fix: Add [mcp_servers.observability] block to ${codexConfigPath} (or rerun \`codex-promax init\`).`,
         );
       }
     }

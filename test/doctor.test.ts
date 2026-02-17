@@ -21,6 +21,23 @@ describe("doctor", () => {
     expect(io.lines).toEqual(["OK"]);
   });
 
+  it("checks codex-max artifacts by default", async () => {
+    const root = createTempWorkspace();
+    initGitMarker(root);
+
+    await runInit({ root });
+
+    fs.unlinkSync(path.join(root, ".agent/harness/observability/smoke.sh"));
+
+    const io = captureIo();
+    const code = await runDoctor({ root }, io.io);
+
+    expect(code).toBe(1);
+    expect(io.lines.some((line) => line.includes(".agent/harness/observability/smoke.sh"))).toBe(
+      true,
+    );
+  });
+
   it("prints actionable Fix messages when structure is broken", async () => {
     const root = createTempWorkspace();
     initGitMarker(root);
