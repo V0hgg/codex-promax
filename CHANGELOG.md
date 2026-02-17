@@ -1,3 +1,12 @@
+## [0.2.3](https://github.com/V0hgg/codex-promax/compare/v0.2.2...v0.2.3) (2026-02-17)
+
+
+### Features
+
+* default init to one-command codex-max scaffold ([69aac2e](https://github.com/V0hgg/codex-promax/commit/69aac2e66255c7940468bd0b9865499452e5e745))
+
+
+
 ## [0.2.2](https://github.com/V0hgg/codex-promax/compare/v0.2.1...v0.2.2) (2026-02-17)
 
 
