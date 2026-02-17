@@ -11,6 +11,7 @@ import { runPromptExec, runPromptPlan } from "./commands/prompt";
 interface CommonCliOptions {
   root?: string;
   assistants?: string;
+  preset?: string;
   agentsFile?: string;
   claudeFile?: string;
   planDir?: string;
@@ -29,6 +30,7 @@ function addCommonOptions(command: Command): Command {
         "assistant targets: codex,claude,augment,all",
       ).default("all"),
     )
+    .addOption(new Option("--preset <name>", "init preset: standard,codex-max").default("standard"))
     .addOption(new Option("--agents-file <name>", "AGENTS.md filename").default("AGENTS.md"))
     .addOption(new Option("--claude-file <name>", "CLAUDE.md filename").default("CLAUDE.md"))
     .addOption(new Option("--plan-dir <path>", "path to .agent directory").default(".agent"))

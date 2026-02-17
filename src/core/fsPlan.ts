@@ -2,6 +2,7 @@ import fs from "node:fs";
 import path from "node:path";
 
 import { upsertManagedBlock } from "./managedBlock";
+import { readTemplateRelative } from "./templates";
 
 export type ActionType = "Create" | "Update" | "Skip";
 
@@ -15,6 +16,13 @@ export interface ActionContext {
   dryRun: boolean;
   root: string;
   log: (line: string) => void;
+}
+
+export interface TemplateCopyEntry {
+  templateRelativePath: string;
+  destinationAbsolutePath: string;
+  executable?: boolean;
+  managed?: boolean;
 }
 
 function displayPath(root: string, absolutePath: string): string {
@@ -137,4 +145,27 @@ export function writeManagedFile(
   const result: ActionResult = { type: "Update", path: filePath };
   printAction(context, result);
   return result;
+}
+
+export function applyTemplateEntries(
+  entries: TemplateCopyEntry[],
+  context: ActionContext,
+  force: boolean,
+): ActionResult[] {
+  const results: ActionResult[] = [];
+
+  for (const entry of entries) {
+    const content = readTemplateRelative(entry.templateRelativePath);
+    const action = entry.managed
+      ? writeManagedFile(entry.destinationAbsolutePath, content, context, force)
+      : writeIfMissingOrForce(entry.destinationAbsolutePath, content, context, force);
+
+    if (entry.executable && !context.dryRun && action.type !== "Skip") {
+      fs.chmodSync(entry.destinationAbsolutePath, 0o755);
+    }
+
+    results.push(action);
+  }
+
+  return results;
 }

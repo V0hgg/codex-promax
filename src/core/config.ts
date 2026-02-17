@@ -1,11 +1,13 @@
 import path from "node:path";
 
 import { AssistantTargets, parseAssistants } from "./assistants";
+import { InitPreset, parsePreset } from "./presets";
 import { resolveRoot } from "./root";
 
 export interface CommonOptions {
   root?: string;
   assistants?: string;
+  preset?: string;
   agentsFile?: string;
   claudeFile?: string;
   planDir?: string;
@@ -18,6 +20,7 @@ export interface CommonOptions {
 export interface ResolvedConfig {
   root: string;
   assistants: AssistantTargets;
+  preset: InitPreset;
   agentsFilePath: string;
   claudeFilePath: string;
   planDirPath: string;
@@ -37,6 +40,7 @@ function resolvePath(root: string, value: string): string {
 export function resolveConfig(options: CommonOptions, cwd: string = process.cwd()): ResolvedConfig {
   const root = resolveRoot(options.root, cwd);
   const assistants = parseAssistants(options.assistants ?? "all");
+  const preset = parsePreset(options.preset);
 
   const agentsFilePath = resolvePath(root, options.agentsFile ?? "AGENTS.md");
   const claudeFilePath = resolvePath(root, options.claudeFile ?? "CLAUDE.md");
@@ -50,6 +54,7 @@ export function resolveConfig(options: CommonOptions, cwd: string = process.cwd(
   return {
     root,
     assistants,
+    preset,
     agentsFilePath,
     claudeFilePath,
     planDirPath,

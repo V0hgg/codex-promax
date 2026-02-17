@@ -126,4 +126,23 @@ describe("init", () => {
     expect(io.lines.some((line) => line.startsWith("Would Create:"))).toBe(true);
     expect(fs.existsSync(path.join(root, "AGENTS.md"))).toBe(false);
   });
+
+  it("applies codex-max preset templates", async () => {
+    const root = createTempWorkspace();
+    initGitMarker(root);
+
+    await runInit({ root, preset: "codex-max" });
+
+    expect(fs.existsSync(path.join(root, ".codex", "config.toml"))).toBe(true);
+  });
+
+  it("shows codex-max preset actions in dry-run", async () => {
+    const root = createTempWorkspace();
+    initGitMarker(root);
+
+    const io = captureIo();
+    await runInit({ root, preset: "codex-max", dryRun: true }, io.io);
+
+    expect(io.lines.some((line) => line.includes(".codex/config.toml"))).toBe(true);
+  });
 });

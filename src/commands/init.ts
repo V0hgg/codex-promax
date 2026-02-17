@@ -3,11 +3,13 @@ import path from "node:path";
 import { CommonOptions, resolveConfig } from "../core/config";
 import {
   ActionContext,
+  applyTemplateEntries,
   ensureDirectory,
+  TemplateCopyEntry,
   writeIfMissingOrForce,
   writeManagedFile,
 } from "../core/fsPlan";
-import { readTemplate } from "../core/templates";
+import { listTemplateFiles, readTemplate } from "../core/templates";
 
 export interface InitIo {
   log: (line: string) => void;
@@ -18,6 +20,26 @@ const defaultIo: InitIo = {
     console.log(line);
   },
 };
+
+function buildPresetTemplateEntries(root: string, preset: string): TemplateCopyEntry[] {
+  const presetPrefix = `presets/${preset}/`;
+  const templateFiles = listTemplateFiles(`presets/${preset}`);
+
+  return templateFiles.map((templateRelativePath) => {
+    if (!templateRelativePath.startsWith(presetPrefix)) {
+      throw new Error(
+        `Preset template path "${templateRelativePath}" is outside "${presetPrefix}".`,
+      );
+    }
+
+    const destinationRelativePath = templateRelativePath.slice(presetPrefix.length);
+    return {
+      templateRelativePath,
+      destinationAbsolutePath: path.resolve(root, destinationRelativePath),
+      executable: destinationRelativePath.endsWith(".sh"),
+    };
+  });
+}
 
 export async function runInit(options: CommonOptions, io: InitIo = defaultIo): Promise<number> {
   const config = resolveConfig(options);
@@ -77,6 +99,9 @@ export async function runInit(options: CommonOptions, io: InitIo = defaultIo): P
       config.force,
     );
   }
+
+  const presetEntries = buildPresetTemplateEntries(config.root, config.preset);
+  applyTemplateEntries(presetEntries, actionContext, config.force);
 
   return 0;
 }
