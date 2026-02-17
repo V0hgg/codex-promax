@@ -19,6 +19,8 @@ const CODEX_MAX_REQUIRED_RELATIVE_PATHS = [
   "docs/design-docs/index.md",
   "docs/exec-plans/tech-debt-tracker.md",
   "docs/generated/db-schema.md",
+  "docs/generated/observability-validation.md",
+  "docs/OBSERVABILITY_RUNBOOK.md",
   "docs/product-specs/index.md",
   "docs/references/design-system-reference-llms.txt",
   "docs/SECURITY.md",

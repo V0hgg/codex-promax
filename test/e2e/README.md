@@ -7,6 +7,7 @@ What it verifies:
 - package install (`local` tarball build or `npm` latest)
 - `init` and `doctor` (full codex-max defaults)
 - generated docs topology and MCP config blocks
+- observability runbook docs and validation report template
 - worktree runtime scripts (`up`/`status`/`down`)
 - observability stack startup (Vector + Victoria Logs/Metrics/Traces)
 - Vector fan-out signal checks

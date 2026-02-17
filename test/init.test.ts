@@ -156,6 +156,8 @@ describe("init", () => {
       "docs/exec-plans/completed/.gitkeep",
       "docs/exec-plans/tech-debt-tracker.md",
       "docs/generated/db-schema.md",
+      "docs/generated/observability-validation.md",
+      "docs/OBSERVABILITY_RUNBOOK.md",
       "docs/product-specs/index.md",
       "docs/product-specs/new-user-onboarding.md",
       "docs/references/design-system-reference-llms.txt",

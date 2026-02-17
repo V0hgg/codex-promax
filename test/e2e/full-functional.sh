@@ -103,6 +103,8 @@ verify_docs_structure() {
     "docs/exec-plans/completed/.gitkeep"
     "docs/exec-plans/tech-debt-tracker.md"
     "docs/generated/db-schema.md"
+    "docs/generated/observability-validation.md"
+    "docs/OBSERVABILITY_RUNBOOK.md"
     "docs/product-specs/index.md"
     "docs/product-specs/new-user-onboarding.md"
     "docs/references/design-system-reference-llms.txt"
@@ -123,6 +125,8 @@ verify_docs_structure() {
 
   grep -q '\[mcp_servers.chrome_devtools\]' "$TARGET_REPO/.codex/config.toml" || fail "Missing chrome_devtools MCP block"
   grep -q '\[mcp_servers.observability\]' "$TARGET_REPO/.codex/config.toml" || fail "Missing observability MCP block"
+  grep -q 'query_logs' "$TARGET_REPO/docs/OBSERVABILITY_RUNBOOK.md" || fail "Runbook missing MCP query guidance"
+  grep -q 'docs/generated/observability-validation.md' "$TARGET_REPO/docs/OBSERVABILITY_RUNBOOK.md" || fail "Runbook missing validation report target"
 }
 
 main() {

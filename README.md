@@ -26,6 +26,8 @@ codex-promax init
 
 `codex-promax init` now scaffolds the full codex-max package by default, including docs topology, docker observability stack, and MCP config.
 
+The scaffold includes an operator-ready prompt and checklist at `docs/OBSERVABILITY_RUNBOOK.md` plus report template `docs/generated/observability-validation.md`.
+
 After scaffold, boot the worktree-local runtime used by UI legibility workflows:
 
 ```bash
