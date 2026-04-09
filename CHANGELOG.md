@@ -1,3 +1,12 @@
+## [0.2.5](https://github.com/V0hgg/codex-promax/compare/v0.2.4...v0.2.5) (2026-04-09)
+
+
+### Features
+
+* add opencode and agents assistant targets ([73366bc](https://github.com/V0hgg/codex-promax/commit/73366bc2aefa1f526664c82562f1970eed09f76a))
+
+
+
 ## [0.2.4](https://github.com/V0hgg/codex-promax/compare/v0.2.3...v0.2.4) (2026-02-17)
 
 
