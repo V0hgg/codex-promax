@@ -59,6 +59,7 @@ async function main(): Promise<void> {
   addCommonOptions(
     program
       .command("init")
+      .addOption(new Option("--verbose", "show file-by-file scaffold actions").default(false))
       .description("scaffold or patch repo structure for ExecPlans")
       .action(async (options: CommonCliOptions) => {
         const code = await runInit(options);

@@ -15,6 +15,7 @@ export interface CommonOptions {
   skillsDir?: string;
   force?: boolean;
   dryRun?: boolean;
+  verbose?: boolean;
 }
 
 export interface ResolvedConfig {
@@ -31,6 +32,7 @@ export interface ResolvedConfig {
   execplanExecuteSkillPath: string;
   force: boolean;
   dryRun: boolean;
+  verbose: boolean;
 }
 
 function resolvePath(root: string, value: string): string {
@@ -65,5 +67,6 @@ export function resolveConfig(options: CommonOptions, cwd: string = process.cwd(
     execplanExecuteSkillPath,
     force: Boolean(options.force),
     dryRun: Boolean(options.dryRun),
+    verbose: Boolean(options.verbose),
   };
 }

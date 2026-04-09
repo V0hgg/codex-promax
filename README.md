@@ -35,12 +35,14 @@ By default this creates the `codex-max` scaffold, which includes:
 After the first run, the usual next steps are:
 
 ```bash
-codex-promax doctor
-codex-promax prompt telemetry
+npx -y codex-promax@latest prompt telemetry
 ```
 
-- `doctor` checks that the scaffold is complete and healthy.
-- `prompt telemetry` reprints the saved onboarding prompt for connecting your real local service graph to the observability harness.
+Copy that output, paste it into your coding agent in the same repo, and let the agent wire the local telemetry setup around your real dev or cluster start path. On supported systems, `init` also prints a ready-to-run clipboard command against the saved prompt file. When the agent finishes, you can confirm the scaffold with:
+
+```bash
+npx -y codex-promax@latest doctor
+```
 
 ## Common Commands
 
@@ -107,10 +109,12 @@ Useful flags:
 
 ```bash
 codex-promax init --dry-run
+codex-promax init --verbose
 codex-promax init --force
 ```
 
 - `--dry-run` shows what would change without writing files.
+- `--verbose` shows the file-by-file scaffold actions during a real `init` run.
 - `--force` refreshes managed templates and scaffold files.
 
 ## Optional Local Telemetry
@@ -130,7 +134,14 @@ bash .agent/harness/observability/smoke.sh
 docker compose -f .agent/harness/observability/docker-compose.yml down -v
 ```
 
-The smoke check validates the local ingestion path for logs, metrics, and traces. To connect your real services, follow the generated setup guide or paste the telemetry prompt into your coding agent.
+The smoke check validates the local ingestion path for logs, metrics, and traces. To connect your real services, copy the saved telemetry prompt into your coding agent and let it wire the repo around the real local start path.
+The quickest flow is:
+
+```bash
+npx -y codex-promax@latest prompt telemetry
+```
+
+Then copy the output, paste it into your coding agent in the repo, and wait for it to finish.
 
 ## Update
 

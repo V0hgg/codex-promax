@@ -50,14 +50,19 @@ describe("init", () => {
     expect(skill).toContain("name: execplan-create");
     expect(skill).toContain("description:");
 
-    expect(io.lines.some((line) => line.startsWith("Create:"))).toBe(true);
+    expect(io.lines.some((line) => line.startsWith("Create:"))).toBe(false);
+    expect(io.lines.some((line) => line.includes("Codex-Promax is ready."))).toBe(true);
+    expect(io.lines.some((line) => line.includes("telemetry prompt:"))).toBe(true);
+    expect(
+      io.lines.some((line) => line.includes(".agent/prompts/integrate-local-telemetry.md")),
+    ).toBe(true);
     expect(
       io.lines.some((line) =>
-        line.includes("Next step: connect your real local service graph to Codex-Promax observability."),
+        line.includes("paste it into your coding agent in this repo and wait for it to finish."),
       ),
     ).toBe(true);
-    expect(io.lines.some((line) => line.includes("codex-promax prompt telemetry"))).toBe(true);
-    expect(io.lines.some((line) => line.includes("cluster/bootstrap path"))).toBe(true);
+    expect(io.lines.some((line) => line.includes("cluster/bootstrap start path"))).toBe(true);
+    expect(io.lines.some((line) => line.includes("npx -y codex-promax@latest doctor"))).toBe(true);
   });
 
   it("supports opting into the minimal standard preset explicitly", async () => {
@@ -190,6 +195,20 @@ describe("init", () => {
 
     expect(io.lines.some((line) => line.startsWith("Would Create:"))).toBe(true);
     expect(fs.existsSync(path.join(root, "AGENTS.md"))).toBe(false);
+  });
+
+  it("shows file-by-file actions when verbose is enabled", async () => {
+    const root = createTempWorkspace();
+    initGitMarker(root);
+
+    const io = captureIo();
+    await runInit({ root, verbose: true }, io.io);
+
+    expect(io.lines.some((line) => line.startsWith("Create:"))).toBe(true);
+    expect(io.lines.some((line) => line.includes("Codex-Promax is ready."))).toBe(true);
+    expect(
+      io.lines.some((line) => line.includes(".agent/prompts/integrate-local-telemetry.md")),
+    ).toBe(true);
   });
 
   it("applies codex-max preset templates", async () => {

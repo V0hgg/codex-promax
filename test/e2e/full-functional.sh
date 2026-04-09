@@ -257,9 +257,16 @@ main() {
 
   log "Running init + doctor"
   npx --yes --prefix "$TARGET_REPO" "$PACKAGE_NAME" init --root "$TARGET_REPO" | tee "$INIT_LOG"
-  grep -q 'connect your real local service graph to Codex-Promax observability' "$INIT_LOG" || fail "Init output missing telemetry next-step summary"
-  grep -q 'codex-promax prompt telemetry' "$INIT_LOG" || fail "Init output missing prompt telemetry command"
-  grep -q 'cluster/bootstrap path' "$INIT_LOG" || fail "Init output missing cluster-first guidance"
+  grep -q 'Codex-Promax is ready\.' "$INIT_LOG" || fail "Init output missing ready summary"
+  grep -q 'telemetry prompt:' "$INIT_LOG" || fail "Init output missing telemetry prompt command heading"
+  grep -q '.agent/prompts/integrate-local-telemetry.md' "$INIT_LOG" || fail "Init output missing saved prompt file path"
+  grep -q 'paste it into your coding agent in this repo' "$INIT_LOG" || fail "Init output missing agent handoff guidance"
+  grep -q 'cluster/bootstrap start path' "$INIT_LOG" || fail "Init output missing cluster-first guidance"
+  grep -q 'npx -y codex-promax@latest doctor' "$INIT_LOG" || fail "Init output missing npx doctor command"
+  if grep -Eq '^(Create|Skip|Update):' "$INIT_LOG"; then
+    fail "Init output should be quiet by default"
+  fi
+  npx --yes --prefix "$TARGET_REPO" "$PACKAGE_NAME" init --root "$TARGET_REPO" --verbose | grep -q '^Skip:' || fail "Init --verbose should show file-level actions"
   npx --yes --prefix "$TARGET_REPO" "$PACKAGE_NAME" doctor --root "$TARGET_REPO"
 
   log "Validating generated docs and MCP config"

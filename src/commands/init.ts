@@ -1,3 +1,4 @@
+import { spawnSync } from "node:child_process";
 import path from "node:path";
 
 import { CommonOptions, resolveConfig } from "../core/config";
@@ -21,13 +22,82 @@ const defaultIo: InitIo = {
   },
 };
 
-function printCodexMaxNextSteps(io: InitIo): void {
+function shellQuote(value: string): string {
+  return `'${value.replace(/'/g, `'\\''`)}'`;
+}
+
+function powershellQuote(value: string): string {
+  return value.replace(/'/g, "''");
+}
+
+function hasPosixCommand(command: string): boolean {
+  return spawnSync("sh", ["-lc", `command -v ${command} >/dev/null 2>&1`], {
+    stdio: "ignore",
+  }).status === 0;
+}
+
+function resolveClipboardCommand(promptPath: string): string | null {
+  if (process.platform === "darwin" && hasPosixCommand("pbcopy")) {
+    return `pbcopy < ${shellQuote(promptPath)}`;
+  }
+
+  if (process.platform === "linux") {
+    if (hasPosixCommand("wl-copy")) {
+      return `wl-copy < ${shellQuote(promptPath)}`;
+    }
+
+    if (hasPosixCommand("xclip")) {
+      return `xclip -selection clipboard < ${shellQuote(promptPath)}`;
+    }
+  }
+
+  if (process.platform === "win32") {
+    const probe = spawnSync(
+      "powershell",
+      ["-NoProfile", "-Command", "$PSVersionTable.PSVersion.Major"],
+      { stdio: "ignore" },
+    );
+
+    if (probe.status === 0) {
+      return `powershell -NoProfile -Command "Get-Content -Raw '${powershellQuote(promptPath)}' | Set-Clipboard"`;
+    }
+  }
+
+  return null;
+}
+
+function resolvePromptPrintCommand(promptPath: string): string {
+  if (process.platform === "win32") {
+    return `powershell -NoProfile -Command "Get-Content -Raw '${powershellQuote(promptPath)}'"`;
+  }
+
+  return `cat ${shellQuote(promptPath)}`;
+}
+
+function printCodexMaxNextSteps(io: InitIo, promptPath: string): void {
+  const clipboardCommand = resolveClipboardCommand(promptPath);
+
   io.log("");
-  io.log("Next step: connect your real local service graph to Codex-Promax observability.");
-  io.log("- Read docs/LOCAL_TELEMETRY_SETUP.md");
-  io.log("- Open .agent/prompts/integrate-local-telemetry.md or run: codex-promax prompt telemetry");
-  io.log("- Start from the repo's real cluster/bootstrap path when one already exists");
-  io.log("- If the start path is unclear, let your coding agent inspect first and then ask you");
+  io.log("Codex-Promax is ready.");
+  io.log("");
+
+  if (clipboardCommand) {
+    io.log("Copy the telemetry prompt:");
+    io.log(`  ${clipboardCommand}`);
+    io.log("");
+    io.log("Then paste it into your coding agent in this repo and wait for it to finish.");
+  } else {
+    io.log("Print the telemetry prompt:");
+    io.log(`  ${resolvePromptPrintCommand(promptPath)}`);
+    io.log("");
+    io.log("Then copy the output, paste it into your coding agent in this repo, and wait for it to finish.");
+  }
+
+  io.log("If the repo already has a real local cluster/bootstrap start path, the agent will reuse it.");
+  io.log("If the start path is unclear, the agent will inspect first and then ask you for the right local command.");
+  io.log("");
+  io.log("Optional check after setup:");
+  io.log("  npx -y codex-promax@latest doctor");
 }
 
 function buildPresetTemplateEntries(root: string, preset: string): TemplateCopyEntry[] {
@@ -55,11 +125,12 @@ function buildPresetTemplateEntries(root: string, preset: string): TemplateCopyE
 
 export async function runInit(options: CommonOptions, io: InitIo = defaultIo): Promise<number> {
   const config = resolveConfig(options);
+  const shouldLogActions = config.dryRun || config.verbose;
 
   const actionContext: ActionContext = {
     dryRun: config.dryRun,
     root: config.root,
-    log: io.log,
+    log: shouldLogActions ? io.log : () => {},
   };
 
   ensureDirectory(config.planDirPath, actionContext);
@@ -116,7 +187,10 @@ export async function runInit(options: CommonOptions, io: InitIo = defaultIo): P
   applyTemplateEntries(presetEntries, actionContext, config.force);
 
   if (!config.dryRun && config.preset === "codex-max") {
-    printCodexMaxNextSteps(io);
+    printCodexMaxNextSteps(
+      io,
+      path.resolve(config.root, ".agent", "prompts", "integrate-local-telemetry.md"),
+    );
   }
 
   return 0;
