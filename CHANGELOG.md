@@ -1,3 +1,12 @@
+## [0.2.7](https://github.com/V0hgg/codex-promax/compare/v0.2.6...v0.2.7) (2026-04-09)
+
+
+### Bug Fixes
+
+* rewrite README as user guide ([8fd929c](https://github.com/V0hgg/codex-promax/commit/8fd929cf6b369618bc8672ec8500678366221bb7))
+
+
+
 ## [0.2.6](https://github.com/V0hgg/codex-promax/compare/v0.2.5...v0.2.6) (2026-04-09)
 
 

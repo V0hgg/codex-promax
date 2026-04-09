@@ -1,6 +1,6 @@
 {
   "name": "codex-promax",
-  "version": "0.2.6",
+  "version": "0.2.7",
   "description": "Scaffold and validate ExecPlan workflows for AI coding assistants",
   "license": "MIT",
   "repository": {
