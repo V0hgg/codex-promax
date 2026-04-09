@@ -47,6 +47,23 @@ function execPromptString(planFile: string): string {
   ].join("\n");
 }
 
+function installPromptString(
+  root: string,
+  preset: string,
+  assistants: string,
+): string {
+  return [
+    "Install Codex-Promax in this repository end-to-end.",
+    `- Treat ${root} as the repository root.`,
+    `- Run \`npx -y codex-promax@latest init --preset ${preset} --assistants ${assistants}\` from that repo root.`,
+    "- Do not dump file-by-file scaffold logs unless the command fails or I ask for them.",
+    `- Run \`npx -y codex-promax@latest doctor --preset ${preset} --assistants ${assistants}\` after init.`,
+    "- If `.agent/prompts/integrate-local-telemetry.md` exists, copy it to my clipboard if possible. Prefer `pbcopy` on macOS, `wl-copy` or `xclip` on Linux, and `Set-Clipboard` on Windows.",
+    "- If clipboard access is unavailable, print `.agent/prompts/integrate-local-telemetry.md` for me instead.",
+    "- Finish with a short summary: whether Codex-Promax was installed successfully, whether doctor passed, and whether the telemetry prompt is now on my clipboard.",
+  ].join("\n");
+}
+
 function telemetryPromptString(): string {
   return readTemplateRelative("presets/codex-max/.agent/prompts/integrate-local-telemetry.md");
 }
@@ -173,6 +190,15 @@ export async function runPromptExec(
   return 0;
 }
 
+export async function runPromptInstall(
+  options: CommonOptions,
+  io: PromptIo = defaultIo,
+): Promise<number> {
+  const config = resolveConfig(options);
+  io.log(installPromptString(config.root, config.preset, options.assistants ?? "all"));
+  return 0;
+}
+
 export async function runPromptTelemetry(
   options: CommonOptions,
   io: PromptIo = defaultIo,
@@ -185,5 +211,6 @@ export async function runPromptTelemetry(
 export const promptText = {
   planPromptString,
   execPromptString,
+  installPromptString,
   telemetryPromptString,
 };

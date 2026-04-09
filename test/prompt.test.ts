@@ -3,7 +3,12 @@ import path from "node:path";
 
 import { describe, expect, it } from "vitest";
 
-import { runPromptExec, runPromptPlan, runPromptTelemetry } from "../src/commands/prompt";
+import {
+  runPromptExec,
+  runPromptInstall,
+  runPromptPlan,
+  runPromptTelemetry,
+} from "../src/commands/prompt";
 import { resolveRoot } from "../src/core/root";
 import { slugify } from "../src/core/slugify";
 import { readTemplateRelative } from "../src/core/templates";
@@ -39,6 +44,25 @@ describe("prompt", () => {
       - Keep Progress / Surprises & Discoveries / Decision Log / Outcomes & Retrospective updated at every stopping point.
       - Resolve ambiguities autonomously and commit frequently.
       - Stop only when Definition of Done is satisfied, or you are truly blocked (then record the blocker + proposed default decision in the plan)."
+    `);
+  });
+
+  it("prints a repo-aware install prompt for coding agents", async () => {
+    const root = createTempWorkspace();
+    initGitMarker(root);
+    const io = captureIo();
+
+    await runPromptInstall({ root }, io.io);
+
+    expect(io.lines.join("\n")).toMatchInlineSnapshot(`
+      "Install Codex-Promax in this repository end-to-end.
+      - Treat ${root} as the repository root.
+      - Run \`npx -y codex-promax@latest init --preset codex-max --assistants all\` from that repo root.
+      - Do not dump file-by-file scaffold logs unless the command fails or I ask for them.
+      - Run \`npx -y codex-promax@latest doctor --preset codex-max --assistants all\` after init.
+      - If \`.agent/prompts/integrate-local-telemetry.md\` exists, copy it to my clipboard if possible. Prefer \`pbcopy\` on macOS, \`wl-copy\` or \`xclip\` on Linux, and \`Set-Clipboard\` on Windows.
+      - If clipboard access is unavailable, print \`.agent/prompts/integrate-local-telemetry.md\` for me instead.
+      - Finish with a short summary: whether Codex-Promax was installed successfully, whether doctor passed, and whether the telemetry prompt is now on my clipboard."
     `);
   });
 

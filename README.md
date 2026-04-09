@@ -17,6 +17,42 @@ npm i -g codex-promax
 codex-promax init
 ```
 
+## Install With Your Coding Agent
+
+If you want your coding agent to install and initialize Codex-Promax for you, generate the install prompt and copy it straight to your clipboard.
+
+macOS:
+
+```bash
+npx -y codex-promax@latest prompt install | pbcopy
+```
+
+Linux (Wayland):
+
+```bash
+npx -y codex-promax@latest prompt install | wl-copy
+```
+
+Linux (X11):
+
+```bash
+npx -y codex-promax@latest prompt install | xclip -selection clipboard
+```
+
+Windows PowerShell:
+
+```powershell
+npx -y codex-promax@latest prompt install | Set-Clipboard
+```
+
+Then paste that prompt into your coding agent in the target repo and let it handle install, init, doctor, and the telemetry prompt handoff.
+
+If you prefer to copy manually:
+
+```bash
+npx -y codex-promax@latest prompt install
+```
+
 ## Quick Start
 
 Run `codex-promax init` from the root of the repository you want to set up:
@@ -62,6 +98,12 @@ Print a prompt for creating an ExecPlan:
 
 ```bash
 codex-promax prompt plan "Add feature X"
+```
+
+Print a prompt that tells a coding agent to install and initialize Codex-Promax in the current repo:
+
+```bash
+npx -y codex-promax@latest prompt install
 ```
 
 Print a prompt for executing an ExecPlan:

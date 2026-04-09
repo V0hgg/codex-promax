@@ -297,6 +297,9 @@ main() {
   log "Checking prompt telemetry CLI output"
   npx --yes --prefix "$TARGET_REPO" "$PACKAGE_NAME" prompt telemetry | grep -q 'Integrate Local Telemetry Prompt'
 
+  log "Checking prompt install CLI output"
+  npx --yes --prefix "$TARGET_REPO" "$PACKAGE_NAME" prompt install | grep -q 'Install Codex-Promax in this repository end-to-end.'
+
   log "Checking MCP observability tools"
   node "$E2E_DIR/mcp-observability-check.mjs" "$TARGET_REPO"
 

@@ -6,7 +6,12 @@ import path from "node:path";
 
 import { runDoctor } from "./commands/doctor";
 import { runInit } from "./commands/init";
-import { runPromptExec, runPromptPlan, runPromptTelemetry } from "./commands/prompt";
+import {
+  runPromptExec,
+  runPromptInstall,
+  runPromptPlan,
+  runPromptTelemetry,
+} from "./commands/prompt";
 import { DEFAULT_PRESET } from "./core/presets";
 
 interface CommonCliOptions {
@@ -68,6 +73,16 @@ async function main(): Promise<void> {
   );
 
   const prompt = program.command("prompt").description("print assistant prompts");
+
+  addCommonOptions(
+    prompt
+      .command("install")
+      .description("print prompt for a coding agent to install and initialize codex-promax")
+      .action(async (options: CommonCliOptions) => {
+        const code = await runPromptInstall(options);
+        process.exitCode = code;
+      }),
+  );
 
   addCommonOptions(
     prompt
