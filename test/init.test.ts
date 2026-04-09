@@ -57,10 +57,9 @@ describe("init", () => {
       io.lines.some((line) => line.includes(".agent/prompts/integrate-local-telemetry.md")),
     ).toBe(true);
     expect(
-      io.lines.some((line) =>
-        line.includes("paste it into your coding agent in this repo and wait for it to finish."),
-      ),
+      io.lines.some((line) => line.includes("paste it into your coding agent in this repo")),
     ).toBe(true);
+    expect(io.lines.some((line) => line.includes("wait for it to finish."))).toBe(true);
     expect(io.lines.some((line) => line.includes("cluster/bootstrap start path"))).toBe(true);
     expect(io.lines.some((line) => line.includes("npx -y codex-promax@latest doctor"))).toBe(true);
   });
