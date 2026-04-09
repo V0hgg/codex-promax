@@ -24,9 +24,18 @@ npm i -g codex-promax
 codex-promax init
 ```
 
-`codex-promax init` now scaffolds the full codex-max package by default, including docs topology, docker observability stack, and MCP config.
+`codex-promax init` now scaffolds the full `codex-max` package by default. That scaffold includes the docs topology, the local observability/worktree runtime, and a cross-tool agent harness for Codex, Claude Code, OpenCode, and generic `AGENTS.md`-compatible apps.
 
-The scaffold includes an operator-ready prompt and checklist at `docs/OBSERVABILITY_RUNBOOK.md` plus report template `docs/generated/observability-validation.md`.
+The generated harness is organized in layers:
+
+- `.agent/context/` stores reusable repository context notes so agents can read before rediscovering.
+- `.agent/prompts/` stores recurring playbooks for onboarding, readiness checks, debugging handoff, and release validation.
+- `.codex/config.toml` plus `.codex/agents/*.toml` define Codex-native project config and custom agents.
+- `.claude/settings.json`, `.mcp.json`, `.claude/agents/`, and `.claude/rules/` provide Claude-native settings, MCP wiring, agents, and modular rules.
+- `opencode.json`, `.opencode/agents/`, and `.opencode/commands/` provide OpenCode-native config, subagents, and reusable slash commands.
+- `.agent/harness/` keeps the shared worktree runtime and observability stack used across these tools.
+
+The scaffold includes a human onboarding guide at `docs/LOCAL_TELEMETRY_SETUP.md`, a paste-ready coding-agent prompt at `.agent/prompts/integrate-local-telemetry.md`, an operator-ready runbook at `docs/OBSERVABILITY_RUNBOOK.md`, and a validation report template at `docs/generated/observability-validation.md`.
 
 Assistant targeting notes:
 
@@ -50,6 +59,14 @@ Validate codex-max scaffold health:
 codex-promax doctor
 ```
 
+`codex-promax doctor` validates the shared context cache, prompt/playbook files, native Codex/Claude/OpenCode config, and the runtime harness.
+
+Reprint the real telemetry onboarding prompt at any time:
+
+```bash
+codex-promax prompt telemetry
+```
+
 If you need the older minimal scaffold, opt in explicitly:
 
 ```bash
@@ -63,6 +80,8 @@ docker compose -f .agent/harness/observability/docker-compose.yml up -d
 bash .agent/harness/observability/smoke.sh
 docker compose -f .agent/harness/observability/docker-compose.yml down -v
 ```
+
+`smoke.sh` now validates the real local ingestion contract by using a short-lived fixture that writes local log files, exposes a metrics endpoint, and emits OTLP traces. To wire your repository's actual services into the same contract, follow `docs/LOCAL_TELEMETRY_SETUP.md` or paste `.agent/prompts/integrate-local-telemetry.md` into your coding agent.
 
 ## Release workflow
 

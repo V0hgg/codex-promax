@@ -3,9 +3,10 @@ import path from "node:path";
 
 import { describe, expect, it } from "vitest";
 
-import { runPromptExec, runPromptPlan } from "../src/commands/prompt";
+import { runPromptExec, runPromptPlan, runPromptTelemetry } from "../src/commands/prompt";
 import { resolveRoot } from "../src/core/root";
 import { slugify } from "../src/core/slugify";
+import { readTemplateRelative } from "../src/core/templates";
 import { captureIo, createTempWorkspace, initGitMarker, readFile } from "./helpers";
 
 describe("prompt", () => {
@@ -39,6 +40,20 @@ describe("prompt", () => {
       - Resolve ambiguities autonomously and commit frequently.
       - Stop only when Definition of Done is satisfied, or you are truly blocked (then record the blocker + proposed default decision in the plan)."
     `);
+  });
+
+  it("prints the same telemetry prompt that is scaffolded into codex-max repos", async () => {
+    const io = captureIo();
+
+    await runPromptTelemetry({ assistants: "all" }, io.io);
+
+    expect(io.lines.join("\n")).toBe(
+      readTemplateRelative("presets/codex-max/.agent/prompts/integrate-local-telemetry.md"),
+    );
+    expect(io.lines.join("\n")).toContain("Keep deployment manifests, production defaults");
+    expect(io.lines.join("\n")).toContain("If the correct start path cannot be inferred safely");
+    expect(io.lines.join("\n")).toContain("service-topology.example.yaml");
+    expect(io.lines.join("\n")).toContain("docs/generated/observability-validation.md");
   });
 
   it("writes a stub file with required sections when --out is provided", async () => {

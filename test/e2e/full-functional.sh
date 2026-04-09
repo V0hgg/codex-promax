@@ -12,6 +12,7 @@ PACKAGE_NAME="${PACKAGE_NAME:-$(node -p "require('$ROOT_DIR/package.json').name"
 PACKAGE_VERSION="$(node -p "require('$ROOT_DIR/package.json').version")"
 TARGET_REPO="$RUN_ROOT/dummy-app"
 STACK_UP=false
+INIT_LOG="$RUN_ROOT/init.log"
 
 log() {
   printf '[e2e] %s\n' "$1"
@@ -97,6 +98,47 @@ verify_docs_structure() {
   local required_files=(
     "AGENTS.md"
     "ARCHITECTURE.md"
+    "CLAUDE.md"
+    ".agent/context/README.md"
+    ".agent/context/repo-overview.md"
+    ".agent/context/commands.md"
+    ".agent/context/testing.md"
+    ".agent/context/architecture-notes.md"
+    ".agent/prompts/onboard-repository.md"
+    ".agent/prompts/validate-readiness.md"
+    ".agent/prompts/debugging-handoff.md"
+    ".agent/prompts/release-checks.md"
+    ".agent/prompts/integrate-local-telemetry.md"
+    ".claude/settings.json"
+    ".claude/agents/browser-debugger.md"
+    ".claude/agents/code-mapper.md"
+    ".claude/agents/docs-researcher.md"
+    ".claude/agents/reviewer.md"
+    ".claude/rules/context-cache.md"
+    ".claude/rules/verification.md"
+    ".codex/config.toml"
+    ".codex/agents/browser-debugger.toml"
+    ".codex/agents/code-mapper.toml"
+    ".codex/agents/docs-researcher.toml"
+    ".codex/agents/reviewer.toml"
+    ".mcp.json"
+    ".opencode/agents/browser-debugger.md"
+    ".opencode/agents/code-mapper.md"
+    ".opencode/agents/docs-researcher.md"
+    ".opencode/agents/reviewer.md"
+    ".opencode/commands/implementation-plan.md"
+    ".opencode/commands/review-changes.md"
+    ".opencode/commands/validate-readiness.md"
+    ".agents/skills/ui-legibility/SKILL.md"
+    ".agent/harness/observability/fixture/emit-local-telemetry.py"
+    ".agent/harness/observability/local/.gitignore"
+    ".agent/harness/observability/local/README.md"
+    ".agent/harness/observability/local/service-topology.example.yaml"
+    ".agent/harness/observability/local/cluster-up.example.sh"
+    ".agent/harness/observability/local/cluster-down.example.sh"
+    ".agent/harness/observability/local/env.local.example"
+    ".agent/harness/observability/runtime/.gitignore"
+    ".agent/harness/observability/runtime/logs/.gitignore"
     "docs/design-docs/index.md"
     "docs/design-docs/core-beliefs.md"
     "docs/exec-plans/active/.gitkeep"
@@ -104,6 +146,7 @@ verify_docs_structure() {
     "docs/exec-plans/tech-debt-tracker.md"
     "docs/generated/db-schema.md"
     "docs/generated/observability-validation.md"
+    "docs/LOCAL_TELEMETRY_SETUP.md"
     "docs/OBSERVABILITY_RUNBOOK.md"
     "docs/product-specs/index.md"
     "docs/product-specs/new-user-onboarding.md"
@@ -117,18 +160,68 @@ verify_docs_structure() {
     "docs/QUALITY_SCORE.md"
     "docs/RELIABILITY.md"
     "docs/SECURITY.md"
+    "opencode.json"
   )
 
   for relative_path in "${required_files[@]}"; do
     [[ -f "$TARGET_REPO/$relative_path" ]] || fail "Missing expected scaffold file: $relative_path"
   done
 
+  grep -q '.agent/context/' "$TARGET_REPO/AGENTS.md" || fail "AGENTS.md missing context cache guidance"
+  grep -q '.agent/prompts/' "$TARGET_REPO/AGENTS.md" || fail "AGENTS.md missing prompt guidance"
+  grep -q '.agent/context/' "$TARGET_REPO/CLAUDE.md" || fail "CLAUDE.md missing context cache guidance"
+  grep -q '.agent/prompts/' "$TARGET_REPO/CLAUDE.md" || fail "CLAUDE.md missing prompt guidance"
   grep -q '\[mcp_servers.chrome_devtools\]' "$TARGET_REPO/.codex/config.toml" || fail "Missing chrome_devtools MCP block"
   grep -q '\[mcp_servers.observability\]' "$TARGET_REPO/.codex/config.toml" || fail "Missing observability MCP block"
+  grep -q 'project_doc_fallback_filenames' "$TARGET_REPO/.codex/config.toml" || fail "Missing Codex project doc fallback config"
+  grep -q '\[agents\]' "$TARGET_REPO/.codex/config.toml" || fail "Missing Codex agents block"
+  grep -q 'Integrate Local Telemetry Prompt' "$TARGET_REPO/.agent/prompts/integrate-local-telemetry.md" || fail "Missing telemetry onboarding prompt"
+  grep -q 'If the correct start path cannot be inferred safely' "$TARGET_REPO/.agent/prompts/integrate-local-telemetry.md" || fail "Telemetry prompt missing safe handoff guidance"
+  grep -q 'service-topology.example.yaml' "$TARGET_REPO/.agent/prompts/integrate-local-telemetry.md" || fail "Telemetry prompt missing topology artifact guidance"
+  grep -q 'codex-promax prompt telemetry' "$TARGET_REPO/docs/LOCAL_TELEMETRY_SETUP.md" || fail "Telemetry guide missing prompt command"
+  grep -q 'cluster/bootstrap' "$TARGET_REPO/docs/LOCAL_TELEMETRY_SETUP.md" || fail "Telemetry guide missing cluster guidance"
+  grep -q '.agent/prompts/validate-readiness.md' "$TARGET_REPO/docs/OBSERVABILITY_RUNBOOK.md" || fail "Runbook missing readiness playbook guidance"
   grep -qi 'I just installed codex-promax' "$TARGET_REPO/docs/OBSERVABILITY_RUNBOOK.md" || fail "Runbook missing natural-language validation prompt"
   grep -q 'query_logs' "$TARGET_REPO/docs/OBSERVABILITY_RUNBOOK.md" || fail "Runbook missing MCP query guidance"
   grep -q 'docs/generated/observability-validation.md' "$TARGET_REPO/docs/OBSERVABILITY_RUNBOOK.md" || fail "Runbook missing validation report target"
   grep -q 'Ready for Codex coding work: YES/NO' "$TARGET_REPO/docs/generated/observability-validation.md" || fail "Validation report missing readiness status field"
+
+  python3 - "$TARGET_REPO/.codex/config.toml" <<'PY'
+import pathlib
+import sys
+import tomllib
+
+tomllib.loads(pathlib.Path(sys.argv[1]).read_text())
+print("codex config: OK")
+PY
+
+  python3 - "$TARGET_REPO/.claude/settings.json" "$TARGET_REPO/.mcp.json" "$TARGET_REPO/opencode.json" <<'PY'
+import json
+import pathlib
+import sys
+
+for file_path in sys.argv[1:]:
+    json.loads(pathlib.Path(file_path).read_text())
+
+print("json configs: OK")
+PY
+
+  python3 - "$TARGET_REPO/opencode.json" <<'PY'
+import json
+import pathlib
+import sys
+
+config = json.loads(pathlib.Path(sys.argv[1]).read_text())
+instructions = config.get("instructions")
+if not isinstance(instructions, list):
+    raise SystemExit("opencode instructions must be a list")
+
+for expected in [".agent/context/*.md", ".agent/prompts/*.md"]:
+    if expected not in instructions:
+        raise SystemExit(f"missing opencode instruction: {expected}")
+
+print("opencode instructions: OK")
+PY
 }
 
 main() {
@@ -163,7 +256,10 @@ main() {
   fi
 
   log "Running init + doctor"
-  npx --yes --prefix "$TARGET_REPO" "$PACKAGE_NAME" init --root "$TARGET_REPO"
+  npx --yes --prefix "$TARGET_REPO" "$PACKAGE_NAME" init --root "$TARGET_REPO" | tee "$INIT_LOG"
+  grep -q 'connect your real local service graph to Codex-Promax observability' "$INIT_LOG" || fail "Init output missing telemetry next-step summary"
+  grep -q 'codex-promax prompt telemetry' "$INIT_LOG" || fail "Init output missing prompt telemetry command"
+  grep -q 'cluster/bootstrap path' "$INIT_LOG" || fail "Init output missing cluster-first guidance"
   npx --yes --prefix "$TARGET_REPO" "$PACKAGE_NAME" doctor --root "$TARGET_REPO"
 
   log "Validating generated docs and MCP config"
@@ -190,6 +286,9 @@ main() {
 
   log "Running generated observability smoke script"
   bash "$TARGET_REPO/.agent/harness/observability/smoke.sh"
+
+  log "Checking prompt telemetry CLI output"
+  npx --yes --prefix "$TARGET_REPO" "$PACKAGE_NAME" prompt telemetry | grep -q 'Integrate Local Telemetry Prompt'
 
   log "Checking MCP observability tools"
   node "$E2E_DIR/mcp-observability-check.mjs" "$TARGET_REPO"

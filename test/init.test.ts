@@ -20,8 +20,19 @@ describe("init", () => {
     expect(fs.existsSync(path.join(root, "CLAUDE.md"))).toBe(true);
     expect(fs.existsSync(path.join(root, ".codex", "config.toml"))).toBe(true);
     expect(fs.existsSync(path.join(root, ".agent", "harness", "observability", "docker-compose.yml"))).toBe(true);
+    expect(fs.existsSync(path.join(root, ".agent", "context", "README.md"))).toBe(true);
+    expect(fs.existsSync(path.join(root, ".agent", "prompts", "validate-readiness.md"))).toBe(true);
+    expect(fs.existsSync(path.join(root, ".agent", "prompts", "integrate-local-telemetry.md"))).toBe(
+      true,
+    );
     expect(fs.existsSync(path.join(root, ".agent", "PLANS.md"))).toBe(true);
     expect(fs.existsSync(path.join(root, ".agent", "execplans", "README.md"))).toBe(true);
+    expect(fs.existsSync(path.join(root, "docs", "LOCAL_TELEMETRY_SETUP.md"))).toBe(true);
+    expect(
+      fs.existsSync(
+        path.join(root, ".agent", "harness", "observability", "local", "service-topology.example.yaml"),
+      ),
+    ).toBe(true);
     expect(
       fs.existsSync(path.join(root, ".agents", "skills", "execplan-create", "SKILL.md")),
     ).toBe(true);
@@ -32,12 +43,21 @@ describe("init", () => {
     const agents = readFile(root, "AGENTS.md");
     expect(agents).toContain("<!-- execplans:begin -->");
     expect(agents).toContain("<!-- execplans:end -->");
+    expect(agents).toContain(".agent/context/");
+    expect(agents).toContain(".agent/prompts/");
 
     const skill = readFile(root, ".agents/skills/execplan-create/SKILL.md");
     expect(skill).toContain("name: execplan-create");
     expect(skill).toContain("description:");
 
     expect(io.lines.some((line) => line.startsWith("Create:"))).toBe(true);
+    expect(
+      io.lines.some((line) =>
+        line.includes("Next step: connect your real local service graph to Codex-Promax observability."),
+      ),
+    ).toBe(true);
+    expect(io.lines.some((line) => line.includes("codex-promax prompt telemetry"))).toBe(true);
+    expect(io.lines.some((line) => line.includes("cluster/bootstrap path"))).toBe(true);
   });
 
   it("supports opting into the minimal standard preset explicitly", async () => {
@@ -208,13 +228,53 @@ describe("init", () => {
       ".agent/harness/worktree/status.sh",
       ".agent/harness/worktree/app-start.sh",
       ".agent/harness/state/.gitkeep",
+      ".agent/context/README.md",
+      ".agent/context/repo-overview.md",
+      ".agent/context/commands.md",
+      ".agent/context/testing.md",
+      ".agent/context/architecture-notes.md",
+      ".agent/prompts/onboard-repository.md",
+      ".agent/prompts/validate-readiness.md",
+      ".agent/prompts/debugging-handoff.md",
+      ".agent/prompts/release-checks.md",
+      ".agent/prompts/integrate-local-telemetry.md",
+      ".claude/settings.json",
+      ".claude/agents/browser-debugger.md",
+      ".claude/agents/code-mapper.md",
+      ".claude/agents/docs-researcher.md",
+      ".claude/agents/reviewer.md",
+      ".claude/rules/context-cache.md",
+      ".claude/rules/verification.md",
+      ".codex/agents/browser-debugger.toml",
+      ".codex/agents/code-mapper.toml",
+      ".codex/agents/docs-researcher.toml",
+      ".codex/agents/reviewer.toml",
+      ".mcp.json",
+      ".opencode/agents/browser-debugger.md",
+      ".opencode/agents/code-mapper.md",
+      ".opencode/agents/docs-researcher.md",
+      ".opencode/agents/reviewer.md",
+      ".opencode/commands/implementation-plan.md",
+      ".opencode/commands/review-changes.md",
+      ".opencode/commands/validate-readiness.md",
       ".agent/harness/observability/docker-compose.yml",
+      ".agent/harness/observability/fixture/emit-local-telemetry.py",
+      ".agent/harness/observability/local/.gitignore",
+      ".agent/harness/observability/local/README.md",
+      ".agent/harness/observability/local/service-topology.example.yaml",
+      ".agent/harness/observability/local/cluster-up.example.sh",
+      ".agent/harness/observability/local/cluster-down.example.sh",
+      ".agent/harness/observability/local/env.local.example",
+      ".agent/harness/observability/runtime/.gitignore",
+      ".agent/harness/observability/runtime/logs/.gitignore",
       ".agent/harness/observability/vector/vector.yaml",
       ".agent/harness/observability/smoke.sh",
       ".agent/harness/mcp/observability-server/package.json",
       ".agent/harness/mcp/observability-server/README.md",
       ".agent/harness/mcp/observability-server/server.mjs",
       ".agents/skills/ui-legibility/SKILL.md",
+      "docs/LOCAL_TELEMETRY_SETUP.md",
+      "opencode.json",
     ];
 
     for (const relativePath of expectedCodexMaxPaths) {
@@ -222,13 +282,54 @@ describe("init", () => {
     }
 
     const codexConfig = readFile(root, ".codex/config.toml");
+    expect(codexConfig).toContain("project_doc_fallback_filenames");
+    expect(codexConfig).toContain("project_doc_max_bytes");
+    expect(codexConfig).toContain("[agents]");
     expect(codexConfig).toContain("[mcp_servers.chrome_devtools]");
     expect(codexConfig).toContain("[mcp_servers.observability]");
     expect(codexConfig).toContain("command = \"npx\"");
 
+    const reviewerAgent = readFile(root, ".codex/agents/reviewer.toml");
+    expect(reviewerAgent).toContain("name = \"reviewer\"");
+    expect(reviewerAgent).toContain("developer_instructions");
+
+    const claudeSettings = JSON.parse(readFile(root, ".claude/settings.json")) as {
+      plansDirectory: string;
+      enabledMcpjsonServers: string[];
+    };
+    expect(claudeSettings.plansDirectory).toBe(".agent/execplans");
+    expect(claudeSettings.enabledMcpjsonServers).toContain("chrome-devtools");
+
+    const claudeMcp = JSON.parse(readFile(root, ".mcp.json")) as {
+      mcpServers: Record<string, unknown>;
+    };
+    expect(Object.keys(claudeMcp.mcpServers)).toContain("observability");
+
+    const claudeReviewer = readFile(root, ".claude/agents/reviewer.md");
+    expect(claudeReviewer).toContain("name: reviewer");
+    expect(claudeReviewer).toContain("correctness-first review");
+
+    const openCodeConfig = JSON.parse(readFile(root, "opencode.json")) as {
+      instructions: string[];
+    };
+    expect(openCodeConfig.instructions).toContain(".agent/context/*.md");
+    expect(openCodeConfig.instructions).toContain(".agent/prompts/*.md");
+
+    const openCodeReviewer = readFile(root, ".opencode/agents/reviewer.md");
+    expect(openCodeReviewer).toContain("description: Review changes for correctness");
+    expect(openCodeReviewer).toContain("mode: subagent");
+
+    const openCodeValidate = readFile(root, ".opencode/commands/validate-readiness.md");
+    expect(openCodeValidate).toContain("description: Validate whether the current work is ready to land");
+    expect(openCodeValidate).toContain("agent: reviewer");
+
     const uiSkill = readFile(root, ".agents/skills/ui-legibility/SKILL.md");
     expect(uiSkill).toContain("DOM snapshots");
     expect(uiSkill).toContain("screenshots");
+
+    const claude = readFile(root, "CLAUDE.md");
+    expect(claude).toContain(".agent/context/");
+    expect(claude).toContain(".agent/prompts/");
 
     const upStat = fs.statSync(path.join(root, ".agent/harness/worktree/up.sh"));
     expect((upStat.mode & 0o111) !== 0).toBe(true);

@@ -1,0 +1,50 @@
+# Copy this file to service-topology.yaml and replace the placeholders with the
+# repository's real local service graph. If the correct local start path is not
+# obvious from the repo, ask the user for it instead of guessing.
+
+entrypoint:
+  type: cluster-bootstrap
+  command: ./scripts/start-local-cluster.sh
+  stop_command: ./scripts/stop-local-cluster.sh
+  ask_user_if_unknown: true
+  notes:
+    - Reuse the repo's existing local start path when it already starts multiple services.
+    - Prefer wrapping the real bootstrap path instead of inventing a second startup flow.
+
+services:
+  - name: gateway-api
+    role: user-facing entrypoint
+    logs: .agent/harness/observability/runtime/logs/gateway-api.log
+    metrics_url: http://127.0.0.1:9401/metrics
+    traces_service_name: gateway-api
+    depends_on:
+      - workflow-api
+
+  - name: workflow-api
+    role: internal orchestration service
+    logs: .agent/harness/observability/runtime/logs/workflow-api.log
+    metrics_url: http://127.0.0.1:9402/metrics
+    traces_service_name: workflow-api
+    depends_on:
+      - data-api
+
+  - name: data-api
+    role: downstream data service
+    logs: .agent/harness/observability/runtime/logs/data-api.log
+    metrics_url: http://127.0.0.1:9403/metrics
+    traces_service_name: data-api
+    depends_on: []
+
+external_dependencies:
+  - name: shared-auth
+    mode: pass-through
+    notes: Keep as an external dependency unless the repo already starts it locally.
+
+validation:
+  user_visible_request:
+    description: Send one request through the highest-level local entrypoint.
+    command: curl -fsS http://127.0.0.1:8080/healthz
+  expected_services_in_path:
+    - gateway-api
+    - workflow-api
+    - data-api

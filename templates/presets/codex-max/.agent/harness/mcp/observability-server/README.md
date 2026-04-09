@@ -19,10 +19,10 @@ bash .agent/harness/observability/smoke.sh
 
 ## Tool Expectations
 
-- `query_logs` should return records for test query `smoke-log-line`.
-- `query_metrics` should return a success payload for `process_cpu_cores_available`.
-- `query_traces` should return records for `smoke-service`.
+- `query_logs` should return records for the chained fixture services such as `gateway-api`, `workflow-api`, and `data-api`.
+- `query_metrics` should return records for `codex_promax_fixture_requests_total`.
+- `query_traces` should return records for the same chained service names.
 
 ## Suggested Validation Prompt
 
-See `docs/OBSERVABILITY_RUNBOOK.md` for a copy/paste prompt that asks Codex to run doctor checks, validate docs, and verify all MCP tools.
+See `docs/OBSERVABILITY_RUNBOOK.md` for a copy/paste validation prompt, and `docs/LOCAL_TELEMETRY_SETUP.md` plus `.agent/prompts/integrate-local-telemetry.md` for the real repository onboarding flow.

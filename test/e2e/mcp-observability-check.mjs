@@ -128,42 +128,53 @@ async function main() {
       }
     }
 
+    const expectedServices = ["gateway-api", "workflow-api", "data-api"];
+
     const logsResult = await request("tools/call", {
       name: "query_logs",
-      arguments: { query: "smoke-log-line", limit: 1 },
+      arguments: { query: "handled /invoke", limit: 20 },
     });
     const logsText = logsResult?.content?.[0]?.text ?? "";
-    if (!logsText.includes("smoke-log-line")) {
-      throw new Error("MCP query_logs did not return smoke-log-line");
+    for (const serviceName of expectedServices) {
+      if (!logsText.includes(serviceName)) {
+        throw new Error(`MCP query_logs did not return ${serviceName}`);
+      }
     }
 
     const metricsResult = await request("tools/call", {
       name: "query_metrics",
-      arguments: { query: "process_cpu_cores_available" },
+      arguments: { query: "codex_promax_fixture_requests_total" },
     });
     const metricsText = metricsResult?.content?.[0]?.text ?? "";
-    if (!metricsText.includes("\"status\":\"success\"")) {
-      throw new Error("MCP query_metrics did not return success status");
+    if (!metricsText.includes("codex_promax_fixture_requests_total")) {
+      throw new Error("MCP query_metrics did not return codex_promax_fixture_requests_total");
+    }
+    for (const serviceName of expectedServices) {
+      if (!metricsText.includes(serviceName)) {
+        throw new Error(`MCP query_metrics did not include ${serviceName}`);
+      }
     }
 
-    let tracesPass = false;
-    for (let attempt = 0; attempt < 20; attempt += 1) {
-      const tracesResult = await request("tools/call", {
-        name: "query_traces",
-        arguments: { query: "smoke-service", limit: 1 },
-      });
+    for (const serviceName of expectedServices) {
+      let tracesPass = false;
+      for (let attempt = 0; attempt < 20; attempt += 1) {
+        const tracesResult = await request("tools/call", {
+          name: "query_traces",
+          arguments: { query: serviceName, limit: 1 },
+        });
 
-      const tracesText = tracesResult?.content?.[0]?.text ?? "";
-      if (tracesText.includes("smoke-service")) {
-        tracesPass = true;
-        break;
+        const tracesText = tracesResult?.content?.[0]?.text ?? "";
+        if (tracesText.includes(serviceName)) {
+          tracesPass = true;
+          break;
+        }
+
+        await sleep(500);
       }
 
-      await sleep(500);
-    }
-
-    if (!tracesPass) {
-      throw new Error("MCP query_traces did not return smoke-service after retries");
+      if (!tracesPass) {
+        throw new Error(`MCP query_traces did not return ${serviceName} after retries`);
+      }
     }
 
     console.log("[mcp] tools/list: PASS (query_logs, query_metrics, query_traces)");

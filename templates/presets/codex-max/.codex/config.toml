@@ -1,7 +1,18 @@
+#:schema https://developers.openai.com/codex/config-schema.json
+
 # Codex project-scoped configuration for the codex-max preset.
 # This file is committed in each target repository so setup is reproducible.
+# Prefer shared instruction files and keep the behavioral layer stable.
+
+project_doc_fallback_filenames = ["CLAUDE.md"]
+project_doc_max_bytes = 65536
+
+[agents]
+max_threads = 4
+max_depth = 2
 
 [mcp_servers.chrome_devtools]
+# Browser inspection and UI debugging.
 command = "npx"
 args = ["-y", "chrome-devtools-mcp@latest"]
 cwd = "."
@@ -13,6 +24,7 @@ required = false
 CHROME_MCP_HEADLESS = "true"
 
 [mcp_servers.observability]
+# Query the local observability sidecar shipped by this preset.
 command = "node"
 args = [".agent/harness/mcp/observability-server/server.mjs"]
 cwd = "."

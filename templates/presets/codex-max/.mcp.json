@@ -1,0 +1,25 @@
+{
+  "mcpServers": {
+    "chrome-devtools": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "chrome-devtools-mcp@latest"
+      ],
+      "env": {
+        "CHROME_MCP_HEADLESS": "true"
+      }
+    },
+    "observability": {
+      "command": "node",
+      "args": [
+        ".agent/harness/mcp/observability-server/server.mjs"
+      ],
+      "env": {
+        "OBS_LOGS_URL": "http://127.0.0.1:9428",
+        "OBS_METRICS_URL": "http://127.0.0.1:8428",
+        "OBS_TRACES_URL": "http://127.0.0.1:10428"
+      }
+    }
+  }
+}

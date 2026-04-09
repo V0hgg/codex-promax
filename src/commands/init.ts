@@ -21,6 +21,15 @@ const defaultIo: InitIo = {
   },
 };
 
+function printCodexMaxNextSteps(io: InitIo): void {
+  io.log("");
+  io.log("Next step: connect your real local service graph to Codex-Promax observability.");
+  io.log("- Read docs/LOCAL_TELEMETRY_SETUP.md");
+  io.log("- Open .agent/prompts/integrate-local-telemetry.md or run: codex-promax prompt telemetry");
+  io.log("- Start from the repo's real cluster/bootstrap path when one already exists");
+  io.log("- If the start path is unclear, let your coding agent inspect first and then ask you");
+}
+
 function buildPresetTemplateEntries(root: string, preset: string): TemplateCopyEntry[] {
   const presetPrefix = `presets/${preset}/`;
   const templateFiles = listTemplateFiles(`presets/${preset}`);
@@ -32,7 +41,10 @@ function buildPresetTemplateEntries(root: string, preset: string): TemplateCopyE
       );
     }
 
-    const destinationRelativePath = templateRelativePath.slice(presetPrefix.length);
+    const templateDestinationPath = templateRelativePath.slice(presetPrefix.length);
+    const destinationRelativePath = templateDestinationPath.endsWith(".npmignore")
+      ? `${templateDestinationPath.slice(0, -".npmignore".length)}.gitignore`
+      : templateDestinationPath;
     return {
       templateRelativePath,
       destinationAbsolutePath: path.resolve(root, destinationRelativePath),
@@ -102,6 +114,10 @@ export async function runInit(options: CommonOptions, io: InitIo = defaultIo): P
 
   const presetEntries = buildPresetTemplateEntries(config.root, config.preset);
   applyTemplateEntries(presetEntries, actionContext, config.force);
+
+  if (!config.dryRun && config.preset === "codex-max") {
+    printCodexMaxNextSteps(io);
+  }
 
   return 0;
 }

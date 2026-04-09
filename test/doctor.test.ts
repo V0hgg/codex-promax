@@ -96,22 +96,87 @@ describe("doctor", () => {
     ).toBe(true);
   });
 
+  it("validates Claude Code native files for codex-max preset", async () => {
+    const root = createTempWorkspace();
+    initGitMarker(root);
+
+    await runInit({ root, preset: "codex-max" });
+
+    writeFile(root, ".claude/settings.json", "{ invalid");
+    writeFile(root, ".mcp.json", JSON.stringify({ nope: true }, null, 2));
+    writeFile(root, ".claude/agents/reviewer.md", "# reviewer\n");
+
+    const io = captureIo();
+    const code = await runDoctor({ root, preset: "codex-max" }, io.io);
+
+    expect(code).toBe(1);
+    expect(io.lines.some((line) => line.includes(".claude/settings.json"))).toBe(true);
+    expect(io.lines.some((line) => line.includes(".mcp.json"))).toBe(true);
+    expect(io.lines.some((line) => line.includes(".claude/agents/reviewer.md"))).toBe(true);
+  });
+
+  it("validates OpenCode native files for codex-max preset", async () => {
+    const root = createTempWorkspace();
+    initGitMarker(root);
+
+    await runInit({ root, preset: "codex-max" });
+
+    writeFile(root, "opencode.json", JSON.stringify({ instructions: ["README.md"] }, null, 2));
+    writeFile(root, ".opencode/agents/reviewer.md", "# reviewer\n");
+    writeFile(root, ".opencode/commands/validate-readiness.md", "# command\n");
+
+    const io = captureIo();
+    const code = await runDoctor({ root, preset: "codex-max" }, io.io);
+
+    expect(code).toBe(1);
+    expect(io.lines.some((line) => line.includes("opencode.json"))).toBe(true);
+    expect(io.lines.some((line) => line.includes(".agent/context/*.md"))).toBe(true);
+    expect(io.lines.some((line) => line.includes(".agent/prompts/*.md"))).toBe(true);
+    expect(io.lines.some((line) => line.includes(".opencode/agents/reviewer.md"))).toBe(true);
+    expect(io.lines.some((line) => line.includes(".opencode/commands/validate-readiness.md"))).toBe(
+      true,
+    );
+  });
+
   it("prints codex-max specific Fix messages when preset artifacts are missing", async () => {
     const root = createTempWorkspace();
     initGitMarker(root);
 
     await runInit({ root, preset: "codex-max" });
 
+    fs.unlinkSync(path.join(root, ".agent", "context", "README.md"));
+    fs.unlinkSync(path.join(root, ".agent", "prompts", "validate-readiness.md"));
+    fs.unlinkSync(path.join(root, ".agent", "prompts", "integrate-local-telemetry.md"));
     fs.unlinkSync(path.join(root, ".agent/harness/observability/smoke.sh"));
+    fs.unlinkSync(path.join(root, ".agent/harness/observability/local/service-topology.example.yaml"));
+    fs.unlinkSync(path.join(root, ".agent/harness/observability/runtime/.gitignore"));
+    fs.unlinkSync(path.join(root, "docs/LOCAL_TELEMETRY_SETUP.md"));
+    fs.unlinkSync(path.join(root, ".codex", "agents", "reviewer.toml"));
     writeFile(root, ".codex/config.toml", "[mcp_servers.chrome_devtools]\ncommand = \"npx\"\n");
 
     const io = captureIo();
     const code = await runDoctor({ root, preset: "codex-max" }, io.io);
 
     expect(code).toBe(1);
+    expect(io.lines.some((line) => line.includes(".agent/context/README.md"))).toBe(true);
+    expect(io.lines.some((line) => line.includes(".agent/prompts/validate-readiness.md"))).toBe(true);
+    expect(io.lines.some((line) => line.includes(".agent/prompts/integrate-local-telemetry.md"))).toBe(
+      true,
+    );
     expect(io.lines.some((line) => line.includes(".agent/harness/observability/smoke.sh"))).toBe(
       true,
     );
+    expect(
+      io.lines.some((line) =>
+        line.includes(".agent/harness/observability/local/service-topology.example.yaml"),
+      ),
+    ).toBe(true);
+    expect(io.lines.some((line) => line.includes(".agent/harness/observability/runtime/.gitignore"))).toBe(
+      true,
+    );
+    expect(io.lines.some((line) => line.includes("docs/LOCAL_TELEMETRY_SETUP.md"))).toBe(true);
+    expect(io.lines.some((line) => line.includes(".codex/agents/reviewer.toml"))).toBe(true);
+    expect(io.lines.some((line) => line.includes("project_doc_fallback_filenames"))).toBe(true);
     expect(io.lines.some((line) => line.includes("[mcp_servers.observability]"))).toBe(true);
   });
 });

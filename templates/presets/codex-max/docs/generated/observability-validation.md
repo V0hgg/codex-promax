@@ -16,6 +16,7 @@ Update this file after each full harness validation run.
 codex-promax doctor
 docker compose -f .agent/harness/observability/docker-compose.yml up -d
 bash .agent/harness/observability/smoke.sh
+codex-promax prompt telemetry
 docker compose -f .agent/harness/observability/docker-compose.yml down -v
 ```
 
@@ -26,6 +27,11 @@ docker compose -f .agent/harness/observability/docker-compose.yml down -v
 - Smoke logs: PASS/FAIL
 - Smoke metrics: PASS/FAIL
 - Smoke traces: PASS/FAIL
+- Cluster/bootstrap start path reused for real app telemetry: YES/NO
+- Service topology captured: PASS/FAIL
+- Runtime log path configured per service: PASS/FAIL
+- Real metrics endpoint scrape configured per service: PASS/FAIL
+- Local trace export configured: PASS/FAIL
 - MCP `query_logs`: PASS/FAIL
 - MCP `query_metrics`: PASS/FAIL
 - MCP `query_traces`: PASS/FAIL
@@ -34,4 +40,8 @@ docker compose -f .agent/harness/observability/docker-compose.yml down -v
 
 - Key output excerpts:
 - MCP response summary:
+- Local wrapper or startup path:
+- Service topology file:
+- Metrics endpoints:
+- Trace env vars or exporter settings:
 - Follow-up actions:

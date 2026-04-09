@@ -5,19 +5,25 @@ api:
   address: 0.0.0.0:8686
 
 sources:
-  demo_logs:
-    type: demo_logs
-    format: json
-    interval: 1
-  internal_metrics:
-    type: internal_metrics
+  app_logs:
+    type: file
+    include:
+      - /workspace/runtime/logs/**/*.log
+    read_from: beginning
+  local_service_metrics:
+    type: prometheus_scrape
+    endpoints:
+      - http://telemetry-fixture:9471/metrics
+      - http://telemetry-fixture:9472/metrics
+      - http://telemetry-fixture:9473/metrics
+    scrape_interval_secs: 2
 
 sinks:
   victoria_logs:
     type: http
     inputs:
-      - demo_logs
-    uri: http://victoria-logs:9428/insert/jsonline?_stream_fields=source&_msg_field=message
+      - app_logs
+    uri: http://victoria-logs:9428/insert/jsonline?_msg_field=message
     method: post
     encoding:
       codec: json
@@ -27,5 +33,5 @@ sinks:
   victoria_metrics:
     type: prometheus_remote_write
     inputs:
-      - internal_metrics
+      - local_service_metrics
     endpoint: http://victoria-metrics:8428/api/v1/write

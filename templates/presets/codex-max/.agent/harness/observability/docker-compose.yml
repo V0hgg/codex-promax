@@ -1,10 +1,33 @@
 services:
+  telemetry-fixture:
+    image: python:3.12-alpine
+    container_name: codex-observability-telemetry-fixture
+    working_dir: /workspace
+    command:
+      - python3
+      - /workspace/fixture/emit-local-telemetry.py
+      - --runtime-dir
+      - /workspace/runtime/logs
+      - --trace-endpoint
+      - http://victoria-traces:10428/insert/opentelemetry/v1/traces
+    volumes:
+      - ./fixture:/workspace/fixture:ro
+      - ./runtime:/workspace/runtime
+    ports:
+      - "9471:9471"
+    depends_on:
+      - victoria-traces
+    profiles:
+      - smoke
+
   vector:
     image: timberio/vector:latest-alpine
     container_name: codex-observability-vector
     restart: unless-stopped
     volumes:
       - ./vector/vector.yaml:/etc/vector/vector.yaml:ro
+      - ./runtime:/workspace/runtime
+      - vector-data:/tmp/vector
     ports:
       - "8686:8686"
       - "4318:4318"
@@ -48,6 +71,7 @@ services:
       - "10428:10428"
 
 volumes:
+  vector-data:
   victoria-logs-data:
   victoria-metrics-data:
   victoria-traces-data:

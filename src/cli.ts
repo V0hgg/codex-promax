@@ -6,7 +6,7 @@ import path from "node:path";
 
 import { runDoctor } from "./commands/doctor";
 import { runInit } from "./commands/init";
-import { runPromptExec, runPromptPlan } from "./commands/prompt";
+import { runPromptExec, runPromptPlan, runPromptTelemetry } from "./commands/prompt";
 import { DEFAULT_PRESET } from "./core/presets";
 
 interface CommonCliOptions {
@@ -87,6 +87,16 @@ async function main(): Promise<void> {
       .description("print prompt for executing an ExecPlan")
       .action(async (planfile: string, options: CommonCliOptions) => {
         const code = await runPromptExec(planfile, options);
+        process.exitCode = code;
+      }),
+  );
+
+  addCommonOptions(
+    prompt
+      .command("telemetry")
+      .description("print prompt for integrating real local telemetry into the observability harness")
+      .action(async (options: CommonCliOptions) => {
+        const code = await runPromptTelemetry(options);
         process.exitCode = code;
       }),
   );

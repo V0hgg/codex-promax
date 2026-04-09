@@ -4,6 +4,7 @@ import path from "node:path";
 import { CommonOptions, resolveConfig } from "../core/config";
 import { printAction } from "../core/fsPlan";
 import { slugify } from "../core/slugify";
+import { readTemplateRelative } from "../core/templates";
 
 export interface PromptPlanOptions extends CommonOptions {
   out?: string;
@@ -44,6 +45,10 @@ function execPromptString(planFile: string): string {
     "- Resolve ambiguities autonomously and commit frequently.",
     "- Stop only when Definition of Done is satisfied, or you are truly blocked (then record the blocker + proposed default decision in the plan).",
   ].join("\n");
+}
+
+function telemetryPromptString(): string {
+  return readTemplateRelative("presets/codex-max/.agent/prompts/integrate-local-telemetry.md");
 }
 
 function buildPlanStub(title: string): string {
@@ -168,7 +173,17 @@ export async function runPromptExec(
   return 0;
 }
 
+export async function runPromptTelemetry(
+  options: CommonOptions,
+  io: PromptIo = defaultIo,
+): Promise<number> {
+  resolveConfig(options);
+  io.log(telemetryPromptString());
+  return 0;
+}
+
 export const promptText = {
   planPromptString,
   execPromptString,
+  telemetryPromptString,
 };
