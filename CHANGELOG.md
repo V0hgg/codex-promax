@@ -1,3 +1,17 @@
+## [0.2.9](https://github.com/V0hgg/codex-promax/compare/v0.2.8...v0.2.9) (2026-04-09)
+
+
+### Bug Fixes
+
+* align agent install prompt with custom setup ([d768976](https://github.com/V0hgg/codex-promax/commit/d7689768537acf536eecc5a4dcdc85eba507622c))
+
+
+### Features
+
+* add agent-first install prompt flow ([b4da4ab](https://github.com/V0hgg/codex-promax/commit/b4da4ab42f2b43881b10f49625c317b02d3ce7db))
+
+
+
 ## [0.2.8](https://github.com/V0hgg/codex-promax/compare/v0.2.7...v0.2.8) (2026-04-09)
 
 
