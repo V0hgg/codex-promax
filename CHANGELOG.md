@@ -1,3 +1,13 @@
+## [0.2.8](https://github.com/V0hgg/codex-promax/compare/v0.2.7...v0.2.8) (2026-04-09)
+
+
+### Bug Fixes
+
+* make init output assertions cross-platform ([b67de88](https://github.com/V0hgg/codex-promax/commit/b67de8880f30243a60382706534892601aa19201))
+* simplify init output and telemetry handoff ([4978559](https://github.com/V0hgg/codex-promax/commit/49785595e6a9354171d106c4285cdbeb7b48cbfc))
+
+
+
 ## [0.2.7](https://github.com/V0hgg/codex-promax/compare/v0.2.6...v0.2.7) (2026-04-09)
 
 
