@@ -3,6 +3,7 @@ import path from "node:path";
 
 import { CommonOptions, resolveConfig } from "../core/config";
 import { printAction } from "../core/fsPlan";
+import { DEFAULT_PRESET } from "../core/presets";
 import { slugify } from "../core/slugify";
 import { readTemplateRelative } from "../core/templates";
 
@@ -47,20 +48,77 @@ function execPromptString(planFile: string): string {
   ].join("\n");
 }
 
-function installPromptString(
-  root: string,
-  preset: string,
-  assistants: string,
-): string {
+function shellQuote(value: string): string {
+  if (/^[A-Za-z0-9_./:@-]+$/.test(value)) {
+    return value;
+  }
+
+  return `'${value.replace(/'/g, `'\\''`)}'`;
+}
+
+function buildCliArgs(options: CommonOptions): string[] {
+  const args: string[] = [
+    "--preset",
+    options.preset ?? DEFAULT_PRESET,
+    "--assistants",
+    options.assistants ?? "all",
+  ];
+
+  if (options.agentsFile) {
+    args.push("--agents-file", options.agentsFile);
+  }
+
+  if (options.claudeFile) {
+    args.push("--claude-file", options.claudeFile);
+  }
+
+  if (options.planDir) {
+    args.push("--plan-dir", options.planDir);
+  }
+
+  if (options.execplansDir) {
+    args.push("--execplans-dir", options.execplansDir);
+  }
+
+  if (options.skillsDir) {
+    args.push("--skills-dir", options.skillsDir);
+  }
+
+  if (options.force) {
+    args.push("--force");
+  }
+
+  if (options.dryRun) {
+    args.push("--dry-run");
+  }
+
+  return args;
+}
+
+function toCommand(command: string, args: string[]): string {
+  const tokens = ["npx", "-y", "codex-promax@latest", command, ...args].map(shellQuote);
+  return tokens.join(" ");
+}
+
+function installPromptString(root: string, options: CommonOptions, telemetryPromptPath: string): string {
+  const args = buildCliArgs(options);
+  const initCommand = toCommand("init", args);
+  const doctorCommand = toCommand("doctor", args.filter((arg) => arg !== "--force" && arg !== "--dry-run"));
   return [
     "Install Codex-Promax in this repository end-to-end.",
     `- Treat ${root} as the repository root.`,
-    `- Run \`npx -y codex-promax@latest init --preset ${preset} --assistants ${assistants}\` from that repo root.`,
+    `- Run \`${initCommand}\` from that repo root.`,
     "- Do not dump file-by-file scaffold logs unless the command fails or I ask for them.",
-    `- Run \`npx -y codex-promax@latest doctor --preset ${preset} --assistants ${assistants}\` after init.`,
-    "- If `.agent/prompts/integrate-local-telemetry.md` exists, copy it to my clipboard if possible. Prefer `pbcopy` on macOS, `wl-copy` or `xclip` on Linux, and `Set-Clipboard` on Windows.",
-    "- If clipboard access is unavailable, print `.agent/prompts/integrate-local-telemetry.md` for me instead.",
-    "- Finish with a short summary: whether Codex-Promax was installed successfully, whether doctor passed, and whether the telemetry prompt is now on my clipboard.",
+    ...(options.dryRun
+      ? [
+          "- Because this is a dry run, do not run doctor. Instead, summarize what Codex-Promax would change and whether the telemetry prompt path looks correct.",
+        ]
+      : [
+          `- Run \`${doctorCommand}\` after init.`,
+          `- If \`${telemetryPromptPath}\` exists, copy it to my clipboard if possible. Prefer \`pbcopy\` on macOS, \`wl-copy\` or \`xclip\` on Linux, and \`Set-Clipboard\` on Windows.`,
+          `- If clipboard access is unavailable, print \`${telemetryPromptPath}\` for me instead.`,
+          "- Finish with a short summary: whether Codex-Promax was installed successfully, whether doctor passed, and whether the telemetry prompt is now on my clipboard.",
+        ]),
   ].join("\n");
 }
 
@@ -195,7 +253,16 @@ export async function runPromptInstall(
   io: PromptIo = defaultIo,
 ): Promise<number> {
   const config = resolveConfig(options);
-  io.log(installPromptString(config.root, config.preset, options.assistants ?? "all"));
+  io.log(
+    installPromptString(
+      config.root,
+      options,
+      toRepoRelative(
+        config.root,
+        path.join(config.planDirPath, "prompts", "integrate-local-telemetry.md"),
+      ),
+    ),
+  );
   return 0;
 }
 

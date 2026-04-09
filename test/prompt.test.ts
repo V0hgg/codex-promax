@@ -66,6 +66,35 @@ describe("prompt", () => {
     `);
   });
 
+  it("keeps custom scaffold paths and assistant flags in the install prompt", async () => {
+    const root = createTempWorkspace();
+    initGitMarker(root);
+    const io = captureIo();
+
+    await runPromptInstall(
+      {
+        root,
+        preset: "standard",
+        assistants: "opencode",
+        agentsFile: "CUSTOM_AGENTS.md",
+        claudeFile: "CUSTOM_CLAUDE.md",
+        planDir: "custom-agent",
+        execplansDir: "custom-agent/plans",
+        skillsDir: "custom-skills",
+      },
+      io.io,
+    );
+
+    const output = io.lines.join("\n");
+    expect(output).toContain(
+      "npx -y codex-promax@latest init --preset standard --assistants opencode --agents-file CUSTOM_AGENTS.md --claude-file CUSTOM_CLAUDE.md --plan-dir custom-agent --execplans-dir custom-agent/plans --skills-dir custom-skills",
+    );
+    expect(output).toContain(
+      "npx -y codex-promax@latest doctor --preset standard --assistants opencode --agents-file CUSTOM_AGENTS.md --claude-file CUSTOM_CLAUDE.md --plan-dir custom-agent --execplans-dir custom-agent/plans --skills-dir custom-skills",
+    );
+    expect(output).toContain("`custom-agent/prompts/integrate-local-telemetry.md`");
+  });
+
   it("prints the same telemetry prompt that is scaffolded into codex-max repos", async () => {
     const io = captureIo();
 

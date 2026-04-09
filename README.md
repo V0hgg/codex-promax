@@ -55,10 +55,10 @@ npx -y codex-promax@latest prompt install
 
 ## Quick Start
 
-Run `codex-promax init` from the root of the repository you want to set up:
+Run this from the root of the repository you want to set up:
 
 ```bash
-codex-promax init
+npx -y codex-promax@latest init
 ```
 
 By default this creates the `codex-max` scaffold, which includes:
@@ -82,22 +82,24 @@ npx -y codex-promax@latest doctor
 
 ## Common Commands
 
+If you installed `codex-promax` globally, you can drop the `npx -y codex-promax@latest` prefix in the commands below.
+
 Initialize or refresh the scaffold:
 
 ```bash
-codex-promax init
+npx -y codex-promax@latest init
 ```
 
 Check scaffold health:
 
 ```bash
-codex-promax doctor
+npx -y codex-promax@latest doctor
 ```
 
 Print a prompt for creating an ExecPlan:
 
 ```bash
-codex-promax prompt plan "Add feature X"
+npx -y codex-promax@latest prompt plan "Add feature X"
 ```
 
 Print a prompt that tells a coding agent to install and initialize Codex-Promax in the current repo:
@@ -109,13 +111,13 @@ npx -y codex-promax@latest prompt install
 Print a prompt for executing an ExecPlan:
 
 ```bash
-codex-promax prompt exec .agent/execplans/my-plan.md
+npx -y codex-promax@latest prompt exec .agent/execplans/my-plan.md
 ```
 
 Print the telemetry onboarding prompt again later:
 
 ```bash
-codex-promax prompt telemetry
+npx -y codex-promax@latest prompt telemetry
 ```
 
 ## Presets And Assistant Targets
@@ -123,21 +125,21 @@ codex-promax prompt telemetry
 Use the full scaffold, which is the default:
 
 ```bash
-codex-promax init --preset codex-max
+npx -y codex-promax@latest init --preset codex-max
 ```
 
 Use the lighter scaffold:
 
 ```bash
-codex-promax init --preset standard
+npx -y codex-promax@latest init --preset standard
 ```
 
 Target specific assistants:
 
 ```bash
-codex-promax init --assistants opencode
-codex-promax init --assistants agents
-codex-promax init --assistants all
+npx -y codex-promax@latest init --assistants opencode
+npx -y codex-promax@latest init --assistants agents
+npx -y codex-promax@latest init --assistants all
 ```
 
 Notes:
@@ -150,9 +152,9 @@ Notes:
 Useful flags:
 
 ```bash
-codex-promax init --dry-run
-codex-promax init --verbose
-codex-promax init --force
+npx -y codex-promax@latest init --dry-run
+npx -y codex-promax@latest init --verbose
+npx -y codex-promax@latest init --force
 ```
 
 - `--dry-run` shows what would change without writing files.
@@ -202,13 +204,13 @@ npm i -g codex-promax@latest
 To refresh an existing repository scaffold after updating the package:
 
 ```bash
-codex-promax init
+npx -y codex-promax@latest init
 ```
 
 If you want to overwrite managed scaffold files with the latest version:
 
 ```bash
-codex-promax init --force
+npx -y codex-promax@latest init --force
 ```
 
 ## Help
@@ -216,8 +218,8 @@ codex-promax init --force
 See CLI help at any time:
 
 ```bash
-codex-promax --help
-codex-promax init --help
-codex-promax prompt --help
-codex-promax doctor --help
+npx -y codex-promax@latest --help
+npx -y codex-promax@latest init --help
+npx -y codex-promax@latest prompt --help
+npx -y codex-promax@latest doctor --help
 ```

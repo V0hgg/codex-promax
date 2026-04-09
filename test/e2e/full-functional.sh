@@ -298,7 +298,11 @@ main() {
   npx --yes --prefix "$TARGET_REPO" "$PACKAGE_NAME" prompt telemetry | grep -q 'Integrate Local Telemetry Prompt'
 
   log "Checking prompt install CLI output"
-  npx --yes --prefix "$TARGET_REPO" "$PACKAGE_NAME" prompt install | grep -q 'Install Codex-Promax in this repository end-to-end.'
+  install_prompt="$(npx --yes --prefix "$TARGET_REPO" "$PACKAGE_NAME" prompt install)"
+  printf '%s' "$install_prompt" | grep -q 'Install Codex-Promax in this repository end-to-end.' || fail "Install prompt missing heading"
+  printf '%s' "$install_prompt" | grep -q 'npx -y codex-promax@latest init --preset codex-max --assistants all' || fail "Install prompt missing init command"
+  printf '%s' "$install_prompt" | grep -q 'npx -y codex-promax@latest doctor --preset codex-max --assistants all' || fail "Install prompt missing doctor command"
+  printf '%s' "$install_prompt" | grep -q '.agent/prompts/integrate-local-telemetry.md' || fail "Install prompt missing telemetry path"
 
   log "Checking MCP observability tools"
   node "$E2E_DIR/mcp-observability-check.mjs" "$TARGET_REPO"
