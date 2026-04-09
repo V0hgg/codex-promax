@@ -28,6 +28,13 @@ codex-promax init
 
 The scaffold includes an operator-ready prompt and checklist at `docs/OBSERVABILITY_RUNBOOK.md` plus report template `docs/generated/observability-validation.md`.
 
+Assistant targeting notes:
+
+- `--assistants opencode` scaffolds `AGENTS.md` plus shared `.agents/skills` entries for OpenCode.
+- `--assistants agents` scaffolds `AGENTS.md` only for other AGENTS.md-compatible coding apps.
+- `--assistants common` is an alias for `agents`.
+- `--assistants all` now includes `opencode` in addition to the existing named assistants.
+
 After scaffold, boot the worktree-local runtime used by UI legibility workflows:
 
 ```bash

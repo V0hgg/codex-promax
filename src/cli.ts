@@ -28,7 +28,7 @@ function addCommonOptions(command: Command): Command {
     .addOption(
       new Option(
         "--assistants <list>",
-        "assistant targets: codex,claude,augment,all",
+        "assistant targets: agents,common,codex,claude,augment,opencode,all",
       ).default("all"),
     )
     .addOption(

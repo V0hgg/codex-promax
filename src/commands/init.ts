@@ -53,7 +53,7 @@ export async function runInit(options: CommonOptions, io: InitIo = defaultIo): P
   ensureDirectory(config.planDirPath, actionContext);
   ensureDirectory(config.execplansDirPath, actionContext);
 
-  if (config.assistants.needsCodexSkills) {
+  if (config.assistants.needsAgentSkills) {
     ensureDirectory(config.skillsDirPath, actionContext);
     ensureDirectory(path.dirname(config.execplanCreateSkillPath), actionContext);
     ensureDirectory(path.dirname(config.execplanExecuteSkillPath), actionContext);
@@ -85,7 +85,7 @@ export async function runInit(options: CommonOptions, io: InitIo = defaultIo): P
     );
   }
 
-  if (config.assistants.needsCodexSkills) {
+  if (config.assistants.needsAgentSkills) {
     writeIfMissingOrForce(
       config.execplanCreateSkillPath,
       readTemplate("skills/execplan-create.SKILL.md"),

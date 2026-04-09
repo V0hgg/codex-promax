@@ -1,13 +1,29 @@
-export type Assistant = "codex" | "claude" | "augment";
+export type Assistant = "agents" | "codex" | "claude" | "augment" | "opencode";
 
 export interface AssistantTargets {
   values: Assistant[];
   needsAgentsFile: boolean;
   needsClaudeFile: boolean;
-  needsCodexSkills: boolean;
+  needsAgentSkills: boolean;
 }
 
-const VALID_ASSISTANTS = new Set<string>(["codex", "claude", "augment", "all"]);
+const ASSISTANT_ALIASES = new Map<string, Assistant>([["common", "agents"]]);
+const VALID_ASSISTANTS = new Set<string>([
+  "agents",
+  "codex",
+  "claude",
+  "augment",
+  "opencode",
+  "common",
+  "all",
+]);
+const AGENTS_FILE_ASSISTANTS = new Set<Assistant>([
+  "agents",
+  "codex",
+  "augment",
+  "opencode",
+]);
+const AGENT_SKILL_ASSISTANTS = new Set<Assistant>(["codex", "opencode"]);
 
 export function parseAssistants(input: string | undefined): AssistantTargets {
   const raw = (input ?? "all")
@@ -22,7 +38,7 @@ export function parseAssistants(input: string | undefined): AssistantTargets {
   for (const value of raw) {
     if (!VALID_ASSISTANTS.has(value)) {
       throw new Error(
-        `Invalid assistant target \"${value}\". Use codex, claude, augment, or all.`,
+        `Invalid assistant target "${value}". Use agents, common, codex, claude, augment, opencode, or all.`,
       );
     }
   }
@@ -33,18 +49,19 @@ export function parseAssistants(input: string | undefined): AssistantTargets {
       expanded.add("codex");
       expanded.add("claude");
       expanded.add("augment");
+      expanded.add("opencode");
       continue;
     }
 
-    expanded.add(value as Assistant);
+    expanded.add(ASSISTANT_ALIASES.get(value) ?? (value as Assistant));
   }
 
   const values = Array.from(expanded).sort();
 
   return {
     values,
-    needsAgentsFile: expanded.has("codex") || expanded.has("augment"),
+    needsAgentsFile: values.some((assistant) => AGENTS_FILE_ASSISTANTS.has(assistant)),
     needsClaudeFile: expanded.has("claude") || expanded.has("augment"),
-    needsCodexSkills: expanded.has("codex"),
+    needsAgentSkills: values.some((assistant) => AGENT_SKILL_ASSISTANTS.has(assistant)),
   };
 }

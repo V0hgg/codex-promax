@@ -25,7 +25,7 @@ export async function runDoctor(options: CommonOptions, io: DoctorIo = defaultIo
     execplanExecuteSkillPath: config.execplanExecuteSkillPath,
     checkAgentsFile: config.assistants.needsAgentsFile,
     checkClaudeFile: config.assistants.needsClaudeFile,
-    checkCodexSkills: config.assistants.needsCodexSkills,
+    checkAgentSkills: config.assistants.needsAgentSkills,
   });
 
   if (fixes.length === 0) {

@@ -71,7 +71,7 @@ export interface DoctorCheckOptions {
   execplanExecuteSkillPath: string;
   checkAgentsFile: boolean;
   checkClaudeFile: boolean;
-  checkCodexSkills: boolean;
+  checkAgentSkills: boolean;
 }
 
 export function runDoctorChecks(options: DoctorCheckOptions): string[] {
@@ -120,7 +120,7 @@ export function runDoctorChecks(options: DoctorCheckOptions): string[] {
     }
   }
 
-  if (options.checkCodexSkills) {
+  if (options.checkAgentSkills) {
     const skillFiles = [options.execplanCreateSkillPath, options.execplanExecuteSkillPath];
 
     for (const skillPath of skillFiles) {

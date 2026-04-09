@@ -51,6 +51,38 @@ describe("init", () => {
     expect(fs.existsSync(path.join(root, "docs"))).toBe(false);
   });
 
+  it("scaffolds opencode with AGENTS.md and shared skills, but not CLAUDE.md", async () => {
+    const root = createTempWorkspace();
+    initGitMarker(root);
+
+    await runInit({ root, assistants: "opencode" });
+
+    expect(fs.existsSync(path.join(root, "AGENTS.md"))).toBe(true);
+    expect(fs.existsSync(path.join(root, "CLAUDE.md"))).toBe(false);
+    expect(
+      fs.existsSync(path.join(root, ".agents", "skills", "execplan-create", "SKILL.md")),
+    ).toBe(true);
+    expect(
+      fs.existsSync(path.join(root, ".agents", "skills", "execplan-execute", "SKILL.md")),
+    ).toBe(true);
+  });
+
+  it("scaffolds a generic AGENTS target without shared skills", async () => {
+    const root = createTempWorkspace();
+    initGitMarker(root);
+
+    await runInit({ root, assistants: "agents" });
+
+    expect(fs.existsSync(path.join(root, "AGENTS.md"))).toBe(true);
+    expect(fs.existsSync(path.join(root, "CLAUDE.md"))).toBe(false);
+    expect(
+      fs.existsSync(path.join(root, ".agents", "skills", "execplan-create", "SKILL.md")),
+    ).toBe(false);
+    expect(
+      fs.existsSync(path.join(root, ".agents", "skills", "execplan-execute", "SKILL.md")),
+    ).toBe(false);
+  });
+
   it("is idempotent on rerun without force", async () => {
     const root = createTempWorkspace();
     initGitMarker(root);

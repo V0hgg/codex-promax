@@ -77,6 +77,25 @@ describe("doctor", () => {
     expect(io.lines).toEqual(["OK"]);
   });
 
+  it("checks shared skill files for opencode targets", async () => {
+    const root = createTempWorkspace();
+    initGitMarker(root);
+
+    await runInit({ root, assistants: "opencode" });
+
+    fs.unlinkSync(path.join(root, ".agents", "skills", "execplan-create", "SKILL.md"));
+
+    const io = captureIo();
+    const code = await runDoctor({ root, assistants: "opencode" }, io.io);
+
+    expect(code).toBe(1);
+    expect(
+      io.lines.some((line) =>
+        line.includes(".agents/skills/execplan-create/SKILL.md"),
+      ),
+    ).toBe(true);
+  });
+
   it("prints codex-max specific Fix messages when preset artifacts are missing", async () => {
     const root = createTempWorkspace();
     initGitMarker(root);
