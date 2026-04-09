@@ -1,3 +1,12 @@
+## [0.2.6](https://github.com/V0hgg/codex-promax/compare/v0.2.5...v0.2.6) (2026-04-09)
+
+
+### Features
+
+* make telemetry onboarding multi-service-first ([bd1e195](https://github.com/V0hgg/codex-promax/commit/bd1e195b501738354c3c6c892c757b38a05628b5))
+
+
+
 ## [0.2.5](https://github.com/V0hgg/codex-promax/compare/v0.2.4...v0.2.5) (2026-04-09)
 
 
