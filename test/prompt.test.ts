@@ -55,18 +55,12 @@ describe("prompt", () => {
     await runPromptInstall({ root }, io.io);
 
     expect(io.lines.join("\n")).toMatchInlineSnapshot(`
-      "Install Codex-Promax in this repository end-to-end.
-      - Treat ${root} as the repository root.
-      - Run \`npx -y codex-promax@latest init --preset codex-max --assistants all\` from that repo root.
-      - Do not dump file-by-file scaffold logs unless the command fails or I ask for them.
-      - Run \`npx -y codex-promax@latest doctor --preset codex-max --assistants all\` after init.
-      - If \`.agent/prompts/integrate-local-telemetry.md\` exists, copy it to my clipboard if possible. Prefer \`pbcopy\` on macOS, \`wl-copy\` or \`xclip\` on Linux, and \`Set-Clipboard\` on Windows.
-      - If clipboard access is unavailable, print \`.agent/prompts/integrate-local-telemetry.md\` for me instead.
-      - Finish with a short summary: whether Codex-Promax was installed successfully, whether doctor passed, and whether the telemetry prompt is now on my clipboard."
+      "Install Codex-Promax for this repository end-to-end.
+      https://github.com/V0hgg/codex-promax/blob/main/docs/AGENT_INSTALL.md"
     `);
   });
 
-  it("keeps custom scaffold paths and assistant flags in the install prompt", async () => {
+  it("prints the same install prompt even when custom options are passed", async () => {
     const root = createTempWorkspace();
     initGitMarker(root);
     const io = captureIo();
@@ -85,14 +79,12 @@ describe("prompt", () => {
       io.io,
     );
 
-    const output = io.lines.join("\n");
-    expect(output).toContain(
-      "npx -y codex-promax@latest init --preset standard --assistants opencode --agents-file CUSTOM_AGENTS.md --claude-file CUSTOM_CLAUDE.md --plan-dir custom-agent --execplans-dir custom-agent/plans --skills-dir custom-skills",
+    expect(io.lines.join("\n")).toBe(
+      [
+        "Install Codex-Promax for this repository end-to-end.",
+        "https://github.com/V0hgg/codex-promax/blob/main/docs/AGENT_INSTALL.md",
+      ].join("\n"),
     );
-    expect(output).toContain(
-      "npx -y codex-promax@latest doctor --preset standard --assistants opencode --agents-file CUSTOM_AGENTS.md --claude-file CUSTOM_CLAUDE.md --plan-dir custom-agent --execplans-dir custom-agent/plans --skills-dir custom-skills",
-    );
-    expect(output).toContain("`custom-agent/prompts/integrate-local-telemetry.md`");
   });
 
   it("prints the same telemetry prompt that is scaffolded into codex-max repos", async () => {

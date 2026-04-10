@@ -19,38 +19,11 @@ codex-promax init
 
 ## Install With Your Coding Agent
 
-If you want your coding agent to install and initialize Codex-Promax for you, generate the install prompt and copy it straight to your clipboard.
+Copy this prompt into your coding agent in the target repository:
 
-macOS:
-
-```bash
-npx -y codex-promax@latest prompt install | pbcopy
-```
-
-Linux (Wayland):
-
-```bash
-npx -y codex-promax@latest prompt install | wl-copy
-```
-
-Linux (X11):
-
-```bash
-npx -y codex-promax@latest prompt install | xclip -selection clipboard
-```
-
-Windows PowerShell:
-
-```powershell
-npx -y codex-promax@latest prompt install | Set-Clipboard
-```
-
-Then paste that prompt into your coding agent in the target repo and let it handle install, init, doctor, and the telemetry prompt handoff.
-
-If you prefer to copy manually:
-
-```bash
-npx -y codex-promax@latest prompt install
+```text
+Install Codex-Promax for this repository end-to-end.
+https://github.com/V0hgg/codex-promax/blob/main/docs/AGENT_INSTALL.md
 ```
 
 ## Quick Start
@@ -74,7 +47,7 @@ After the first run, the usual next steps are:
 npx -y codex-promax@latest prompt telemetry
 ```
 
-Copy that output, paste it into your coding agent in the same repo, and let the agent wire the local telemetry setup around your real dev or cluster start path. On supported systems, `init` also prints a ready-to-run clipboard command against the saved prompt file. When the agent finishes, you can confirm the scaffold with:
+Copy that output, paste it into your coding agent in the same repo, and let the agent wire the local telemetry setup around your real dev or cluster start path. When the agent finishes, you can confirm the scaffold with:
 
 ```bash
 npx -y codex-promax@latest doctor
@@ -102,7 +75,7 @@ Print a prompt for creating an ExecPlan:
 npx -y codex-promax@latest prompt plan "Add feature X"
 ```
 
-Print a prompt that tells a coding agent to install and initialize Codex-Promax in the current repo:
+Print the same install prompt shown above:
 
 ```bash
 npx -y codex-promax@latest prompt install
