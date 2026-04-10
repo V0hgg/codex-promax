@@ -1,3 +1,12 @@
+## [0.2.10](https://github.com/V0hgg/codex-promax/compare/v0.2.9...v0.2.10) (2026-04-10)
+
+
+### Features
+
+* enrich observability mcp traces and metrics ([d930616](https://github.com/V0hgg/codex-promax/commit/d9306165dea6106c668c54d58eb66e6df09e835f))
+
+
+
 ## [0.2.9](https://github.com/V0hgg/codex-promax/compare/v0.2.8...v0.2.9) (2026-04-09)
 
 
