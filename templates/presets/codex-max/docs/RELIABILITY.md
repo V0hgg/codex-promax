@@ -25,9 +25,11 @@ Expected result:
 
 In addition to smoke checks, validate Codex MCP observability tools:
 
-- `query_logs` must find `smoke-log-line`
-- `query_metrics` must return a successful query for `process_cpu_cores_available`
-- `query_traces` must find `smoke-service`
+- `query_logs` must return fixture log lines for the chained services
+- `query_metrics` must return `codex_promax_fixture_requests_total`
+- `summarize_service_metrics` must return service-labeled request and latency metrics
+- `list_trace_services` and `list_trace_operations` must return the chained fixture services and operations
+- `find_traces` or service-based `query_traces` must return one real fixture trace
 
 Record each run in `docs/generated/observability-validation.md`.
 

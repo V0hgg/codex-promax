@@ -121,7 +121,15 @@ async function main() {
 
     const listResult = await request("tools/list", {});
     const toolNames = (listResult.tools ?? []).map((tool) => tool.name).sort();
-    const expectedTools = ["query_logs", "query_metrics", "query_traces"];
+    const expectedTools = [
+      "query_logs",
+      "query_metrics",
+      "summarize_service_metrics",
+      "query_traces",
+      "list_trace_services",
+      "list_trace_operations",
+      "find_traces",
+    ];
     for (const toolName of expectedTools) {
       if (!toolNames.includes(toolName)) {
         throw new Error(`Missing MCP tool: ${toolName} (found: ${toolNames.join(", ")})`);
@@ -156,15 +164,57 @@ async function main() {
     }
 
     for (const serviceName of expectedServices) {
+      const summaryResult = await request("tools/call", {
+        name: "summarize_service_metrics",
+        arguments: { service: serviceName },
+      });
+      const summaryText = summaryResult?.content?.[0]?.text ?? "";
+      if (!summaryText.includes(serviceName)) {
+        throw new Error(`summarize_service_metrics did not return ${serviceName}`);
+      }
+      for (const metricName of [
+        "codex_promax_fixture_requests_total",
+        "codex_promax_fixture_last_request_duration_milliseconds",
+        "codex_promax_fixture_service_up",
+      ]) {
+        if (!summaryText.includes(metricName)) {
+          throw new Error(`summarize_service_metrics missing ${metricName} for ${serviceName}`);
+        }
+      }
+    }
+
+    const traceServicesResult = await request("tools/call", {
+      name: "list_trace_services",
+      arguments: {},
+    });
+    const traceServicesText = traceServicesResult?.content?.[0]?.text ?? "";
+    for (const serviceName of expectedServices) {
+      if (!traceServicesText.includes(serviceName)) {
+        throw new Error(`list_trace_services did not return ${serviceName}`);
+      }
+    }
+
+    for (const serviceName of expectedServices) {
+      const operationsResult = await request("tools/call", {
+        name: "list_trace_operations",
+        arguments: { service: serviceName },
+      });
+      const operationsText = operationsResult?.content?.[0]?.text ?? "";
+      if (!operationsText.includes(`${serviceName}.invoke`)) {
+        throw new Error(`list_trace_operations did not include ${serviceName}.invoke`);
+      }
+    }
+
+    for (const serviceName of expectedServices) {
       let tracesPass = false;
       for (let attempt = 0; attempt < 20; attempt += 1) {
         const tracesResult = await request("tools/call", {
-          name: "query_traces",
-          arguments: { query: serviceName, limit: 1 },
+          name: "find_traces",
+          arguments: { service: serviceName, limit: 1 },
         });
 
         const tracesText = tracesResult?.content?.[0]?.text ?? "";
-        if (tracesText.includes(serviceName)) {
+        if (tracesText.includes(serviceName) && tracesText.includes(`${serviceName}.invoke`)) {
           tracesPass = true;
           break;
         }
@@ -173,13 +223,26 @@ async function main() {
       }
 
       if (!tracesPass) {
-        throw new Error(`MCP query_traces did not return ${serviceName} after retries`);
+        throw new Error(`MCP find_traces did not return ${serviceName} after retries`);
       }
     }
 
-    console.log("[mcp] tools/list: PASS (query_logs, query_metrics, query_traces)");
+    const legacyTraceResult = await request("tools/call", {
+      name: "query_traces",
+      arguments: { service: "gateway-api", limit: 1 },
+    });
+    const legacyTraceText = legacyTraceResult?.content?.[0]?.text ?? "";
+    if (!legacyTraceText.includes("gateway-api")) {
+      throw new Error("MCP query_traces did not support service-based trace lookup");
+    }
+
+    console.log("[mcp] tools/list: PASS (raw + rich observability tools)");
     console.log("[mcp] query_logs: PASS");
     console.log("[mcp] query_metrics: PASS");
+    console.log("[mcp] summarize_service_metrics: PASS");
+    console.log("[mcp] list_trace_services: PASS");
+    console.log("[mcp] list_trace_operations: PASS");
+    console.log("[mcp] find_traces: PASS");
     console.log("[mcp] query_traces: PASS");
   } finally {
     child.kill("SIGTERM");

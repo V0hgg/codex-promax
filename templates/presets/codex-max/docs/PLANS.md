@@ -12,7 +12,7 @@ For changes touching harness, observability, or MCP integrations, include:
 
 - `codex-promax doctor` output
 - smoke script status for logs, metrics, traces
-- MCP tool call evidence for `query_logs`, `query_metrics`, `query_traces`
+- MCP tool call evidence for both raw and rich observability tools (`query_logs`, `query_metrics`, `summarize_service_metrics`, `query_traces`, and trace lookup helpers)
 - updated `docs/generated/observability-validation.md`
 
 ## Planning Cadence

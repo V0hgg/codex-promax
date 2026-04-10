@@ -7,7 +7,7 @@ Use this guide after `codex-promax init` when you want the packaged observabilit
 The scaffold already gives you:
 
 - a local observability stack under `.agent/harness/observability/`
-- MCP query tools for logs, metrics, and traces
+- MCP query tools for raw logs/metrics/traces plus richer service-level metrics and trace lookup
 - a stronger smoke check that proves the local ingestion contract works
 
 What it does not know yet is how your repository starts its real local service graph. That last mile is repository-specific, so Codex-Promax gives you a prompt to paste into your coding agent instead of mutating the repository automatically.
@@ -58,6 +58,7 @@ The agent should aim for this shape:
 - one user-visible request can be traced across the real local service chain, not just one service in isolation
 - logs land in `.agent/harness/observability/runtime/logs/<service>.log`
 - Vector scrapes one or more real local metrics endpoints you configure in `.agent/harness/observability/vector/vector.yaml`, or a local-only relay/sidecar that makes those metrics reachable from the observability network
+- service-level metrics carry a stable `service="<name>"` label whenever possible so the packaged MCP server can summarize them
 - local traces are exported to the VictoriaTraces endpoint at `http://127.0.0.1:10428/insert/opentelemetry/v1/traces` or an equivalent local-only OTEL path
 - the service graph is captured in a committed topology file adapted from `.agent/harness/observability/local/service-topology.example.yaml`
 

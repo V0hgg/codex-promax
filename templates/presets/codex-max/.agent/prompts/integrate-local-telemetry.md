@@ -6,7 +6,7 @@ You are integrating this repository with the Codex-Promax local observability ha
 
 ## Goal
 
-Connect the repository's real local service graph to the existing logs, metrics, and traces pipeline so the Codex-Promax MCP tools (`query_logs`, `query_metrics`, `query_traces`) return real application telemetry instead of only scaffold health signals. If one user-visible request depends on several services, treat that clustered path as the primary local runtime to onboard.
+Connect the repository's real local service graph to the existing logs, metrics, and traces pipeline so the Codex-Promax MCP tools (`query_logs`, `query_metrics`, `summarize_service_metrics`, `query_traces`, `list_trace_services`, `list_trace_operations`, `find_traces`) return real application telemetry instead of only scaffold health signals. If one user-visible request depends on several services, treat that clustered path as the primary local runtime to onboard.
 
 ## Hard Rules
 
@@ -15,7 +15,7 @@ Connect the repository's real local service graph to the existing logs, metrics,
 3. Keep deployment manifests, production defaults, and CI behavior unchanged. Any code changes for metrics or tracing must stay dormant unless local observability is explicitly enabled.
 4. Prefer a local-only wrapper under `.agent/harness/observability/local/` and update `.agent/harness/worktree/app-start.sh` only if it helps route the existing local startup flow through that wrapper. Use `.agent/harness/observability/local/service-topology.example.yaml`, `cluster-up.example.sh`, `cluster-down.example.sh`, and `env.local.example` as the shape to adapt.
 5. Route logs into `.agent/harness/observability/runtime/logs/<service>.log` when possible by redirecting stdout/stderr or configuring the existing local launcher to write there.
-6. For metrics, reuse existing per-service `/metrics` endpoints when available. Update `.agent/harness/observability/vector/vector.yaml` so the scrape targets match the real reachable local service ports or a local-only relay. If Docker on this workstation cannot reach host ports directly, add a local-only relay or sidecar that republishes those metrics into the observability network instead of changing deployment behavior. If metrics do not exist yet, add the smallest safe local-only metrics path and gate it behind an explicit local observability flag.
+6. For metrics, reuse existing per-service `/metrics` endpoints when available. Update `.agent/harness/observability/vector/vector.yaml` so the scrape targets match the real reachable local service ports or a local-only relay. If Docker on this workstation cannot reach host ports directly, add a local-only relay or sidecar that republishes those metrics into the observability network instead of changing deployment behavior. If metrics do not exist yet, add the smallest safe local-only metrics path and gate it behind an explicit local observability flag. Prefer service-labeled metrics so `summarize_service_metrics` can answer questions per service without repo-specific query knowledge.
 7. For traces, prefer local-only OpenTelemetry configuration. The simplest target is `http://127.0.0.1:10428/insert/opentelemetry/v1/traces` via `OTEL_EXPORTER_OTLP_TRACES_ENDPOINT` or equivalent service-specific settings. Preserve service identity across spans and make one real request visible across multiple services, not only one leaf process.
 8. Never invent secrets or credentials. If local startup depends on missing tokens, API keys, or cloud credentials, create or update example files and setup notes under `.agent/harness/observability/local/`, then stop with a clear blocker.
 9. Keep shared scaffold files committed. Only runtime logs, caches, pid files, and local secret material belong in ignored paths.
@@ -55,5 +55,5 @@ When you are done, report:
 - which trace env vars or instrumentation gates were added
 - which end-to-end request you used for validation
 - which commands you ran
-- whether `query_logs`, `query_metrics`, and `query_traces` now return real application telemetry
+- whether the raw query tools and the richer service-level trace/metrics tools now return real application telemetry
 - any remaining blockers or manual credential/setup steps

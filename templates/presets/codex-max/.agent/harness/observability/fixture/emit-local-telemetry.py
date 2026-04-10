@@ -14,6 +14,12 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 
 REQUEST_METRIC_NAME = "codex_promax_fixture_requests_total"
+FAILURE_METRIC_NAME = "codex_promax_fixture_request_failures_total"
+SERVICE_UP_METRIC_NAME = "codex_promax_fixture_service_up"
+LAST_DURATION_METRIC_NAME = "codex_promax_fixture_last_request_duration_milliseconds"
+LAST_REQUEST_TIME_METRIC_NAME = "codex_promax_fixture_last_request_unix_seconds"
+LAST_STATUS_METRIC_NAME = "codex_promax_fixture_last_status_code"
+DOWNSTREAM_REQUEST_METRIC_NAME = "codex_promax_fixture_downstream_requests_total"
 
 
 def parse_args() -> argparse.Namespace:
@@ -35,17 +41,46 @@ class ServiceRuntime:
     port: int
     log_path: Path
     downstream_port: int | None = None
+    downstream_name: str | None = None
     request_count: int = 0
+    failure_count: int = 0
+    last_duration_ms: float = 0.0
+    last_request_unix_seconds: float = 0.0
+    last_status_code: int = 0
+    downstream_request_counts: dict[str, int] = field(default_factory=dict)
     lock: threading.Lock = field(default_factory=threading.Lock)
 
-    def record_request(self) -> int:
+    def record_request(
+        self,
+        *,
+        success: bool,
+        duration_ms: float,
+        status_code: int,
+        downstream_name: str | None,
+    ) -> int:
         with self.lock:
             self.request_count += 1
+            if not success:
+                self.failure_count += 1
+            if downstream_name is not None:
+                self.downstream_request_counts[downstream_name] = (
+                    self.downstream_request_counts.get(downstream_name, 0) + 1
+                )
+            self.last_duration_ms = duration_ms
+            self.last_request_unix_seconds = time.time()
+            self.last_status_code = status_code
             return self.request_count
 
-    def current_count(self) -> int:
+    def snapshot(self) -> dict[str, object]:
         with self.lock:
-            return self.request_count
+            return {
+                "request_count": self.request_count,
+                "failure_count": self.failure_count,
+                "last_duration_ms": self.last_duration_ms,
+                "last_request_unix_seconds": self.last_request_unix_seconds,
+                "last_status_code": self.last_status_code,
+                "downstream_request_counts": dict(self.downstream_request_counts),
+            }
 
 
 class ReusableThreadingHTTPServer(ThreadingHTTPServer):
@@ -75,14 +110,36 @@ def append_log(
 
 
 def build_metrics_body(service: ServiceRuntime) -> bytes:
+    snapshot = service.snapshot()
+    downstream_lines = []
+    for downstream_name, count in sorted(snapshot["downstream_request_counts"].items()):
+        downstream_lines.append(
+            f'{DOWNSTREAM_REQUEST_METRIC_NAME}{{service="{service.name}",downstream="{downstream_name}"}} {count}',
+        )
+
     body = "\n".join(
         [
             f"# HELP {REQUEST_METRIC_NAME} Chained request count for the codex-promax fixture",
             f"# TYPE {REQUEST_METRIC_NAME} counter",
-            f'{REQUEST_METRIC_NAME}{{service="{service.name}"}} {service.current_count()}',
-            "# HELP codex_promax_fixture_service_up Service liveness for the codex-promax fixture",
-            "# TYPE codex_promax_fixture_service_up gauge",
-            f'codex_promax_fixture_service_up{{service="{service.name}"}} 1',
+            f'{REQUEST_METRIC_NAME}{{service="{service.name}"}} {snapshot["request_count"]}',
+            f"# HELP {FAILURE_METRIC_NAME} Failed chained request count for the codex-promax fixture",
+            f"# TYPE {FAILURE_METRIC_NAME} counter",
+            f'{FAILURE_METRIC_NAME}{{service="{service.name}"}} {snapshot["failure_count"]}',
+            f"# HELP {SERVICE_UP_METRIC_NAME} Service liveness for the codex-promax fixture",
+            f"# TYPE {SERVICE_UP_METRIC_NAME} gauge",
+            f'{SERVICE_UP_METRIC_NAME}{{service="{service.name}"}} 1',
+            f"# HELP {LAST_DURATION_METRIC_NAME} Duration in milliseconds for the last handled request",
+            f"# TYPE {LAST_DURATION_METRIC_NAME} gauge",
+            f'{LAST_DURATION_METRIC_NAME}{{service="{service.name}"}} {snapshot["last_duration_ms"]:.3f}',
+            f"# HELP {LAST_REQUEST_TIME_METRIC_NAME} Unix timestamp for the last handled request",
+            f"# TYPE {LAST_REQUEST_TIME_METRIC_NAME} gauge",
+            f'{LAST_REQUEST_TIME_METRIC_NAME}{{service="{service.name}"}} {snapshot["last_request_unix_seconds"]:.3f}',
+            f"# HELP {LAST_STATUS_METRIC_NAME} HTTP status code from the last handled request",
+            f"# TYPE {LAST_STATUS_METRIC_NAME} gauge",
+            f'{LAST_STATUS_METRIC_NAME}{{service="{service.name}"}} {snapshot["last_status_code"]}',
+            f"# HELP {DOWNSTREAM_REQUEST_METRIC_NAME} Downstream requests emitted by the codex-promax fixture",
+            f"# TYPE {DOWNSTREAM_REQUEST_METRIC_NAME} counter",
+            *downstream_lines,
             "",
         ],
     )
@@ -179,7 +236,7 @@ def build_handler(service: ServiceRuntime, trace_endpoint: str):
                 trace_id = self.headers.get("x-trace-id") or uuid.uuid4().hex
                 parent_span_id = self.headers.get("x-parent-span-id")
                 span_id = uuid.uuid4().hex[:16]
-                request_count = service.record_request()
+                started = time.perf_counter()
 
                 try:
                     downstream_visited: list[str] = []
@@ -199,6 +256,12 @@ def build_handler(service: ServiceRuntime, trace_endpoint: str):
                         visited,
                     )
                     send_span(trace_endpoint, service.name, trace_id, span_id, parent_span_id)
+                    request_count = service.record_request(
+                        success=True,
+                        duration_ms=(time.perf_counter() - started) * 1000,
+                        status_code=200,
+                        downstream_name=service.downstream_name,
+                    )
                     self._send_json(
                         200,
                         {
@@ -216,6 +279,12 @@ def build_handler(service: ServiceRuntime, trace_endpoint: str):
                         f"{service.name} failed /invoke: {error}",
                         trace_id,
                         [service.name],
+                    )
+                    service.record_request(
+                        success=False,
+                        duration_ms=(time.perf_counter() - started) * 1000,
+                        status_code=502,
+                        downstream_name=service.downstream_name,
                     )
                     self._send_json(
                         502,
@@ -248,8 +317,20 @@ def main() -> int:
     runtime_dir = Path(args.runtime_dir)
 
     services = [
-        ServiceRuntime("gateway-api", 9471, runtime_dir / "gateway-api.log", downstream_port=9472),
-        ServiceRuntime("workflow-api", 9472, runtime_dir / "workflow-api.log", downstream_port=9473),
+        ServiceRuntime(
+            "gateway-api",
+            9471,
+            runtime_dir / "gateway-api.log",
+            downstream_port=9472,
+            downstream_name="workflow-api",
+        ),
+        ServiceRuntime(
+            "workflow-api",
+            9472,
+            runtime_dir / "workflow-api.log",
+            downstream_port=9473,
+            downstream_name="data-api",
+        ),
         ServiceRuntime("data-api", 9473, runtime_dir / "data-api.log"),
     ]
 

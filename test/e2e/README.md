@@ -12,7 +12,7 @@ What it verifies:
 - observability stack startup (Vector + Victoria Logs/Metrics/Traces)
 - Vector fan-out signal checks
 - generated smoke script checks for logs, metrics, traces
-- MCP server tool calls for `query_logs`, `query_metrics`, `query_traces`
+- MCP server tool calls for raw queries plus richer service metric and trace lookup helpers
 
 Run from repository root:
 

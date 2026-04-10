@@ -64,7 +64,9 @@ fi
 metrics_ok=false
 for _ in {1..60}; do
   metrics_response="$(curl -fsS 'http://127.0.0.1:8428/prometheus/api/v1/query' -d 'query=codex_promax_fixture_requests_total' || true)"
-  if [[ "$metrics_response" == *"gateway-api"* && "$metrics_response" == *"workflow-api"* && "$metrics_response" == *"data-api"* ]]; then
+  latency_response="$(curl -fsS 'http://127.0.0.1:8428/prometheus/api/v1/query' -d 'query=codex_promax_fixture_last_request_duration_milliseconds' || true)"
+  if [[ "$metrics_response" == *"gateway-api"* && "$metrics_response" == *"workflow-api"* && "$metrics_response" == *"data-api"* \
+     && "$latency_response" == *"gateway-api"* && "$latency_response" == *"workflow-api"* && "$latency_response" == *"data-api"* ]]; then
     metrics_ok=true
     break
   fi
@@ -81,7 +83,9 @@ fi
 trace_ok=false
 for _ in {1..60}; do
   traces_response="$(curl -fsS 'http://127.0.0.1:10428/select/jaeger/api/services' || true)"
-  if [[ "$traces_response" == *"gateway-api"* && "$traces_response" == *"workflow-api"* && "$traces_response" == *"data-api"* ]]; then
+  operations_response="$(curl -fsS 'http://127.0.0.1:10428/select/jaeger/api/services/gateway-api/operations' || true)"
+  if [[ "$traces_response" == *"gateway-api"* && "$traces_response" == *"workflow-api"* && "$traces_response" == *"data-api"* \
+     && "$operations_response" == *"gateway-api.invoke"* ]]; then
     trace_ok=true
     break
   fi

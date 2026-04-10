@@ -358,7 +358,11 @@ describe("init", () => {
     const observabilityServer = readFile(root, ".agent/harness/mcp/observability-server/server.mjs");
     expect(observabilityServer).toContain("query_logs");
     expect(observabilityServer).toContain("query_metrics");
+    expect(observabilityServer).toContain("summarize_service_metrics");
     expect(observabilityServer).toContain("query_traces");
+    expect(observabilityServer).toContain("list_trace_services");
+    expect(observabilityServer).toContain("list_trace_operations");
+    expect(observabilityServer).toContain("find_traces");
   });
 
   it("shows codex-max preset actions in dry-run", async () => {

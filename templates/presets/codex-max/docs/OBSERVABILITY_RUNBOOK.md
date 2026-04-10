@@ -11,7 +11,7 @@ This runbook validates:
 - native Codex, Claude Code, and OpenCode project config files exist
 - local observability stack (Vector + Victoria Logs/Metrics/Traces) starts
 - the local ingestion contract works for log files, service-specific HTTP metrics endpoints, and OTLP traces
-- MCP server tools (`query_logs`, `query_metrics`, `query_traces`) return usable results
+- MCP server tools (`query_logs`, `query_metrics`, `query_traces`, `summarize_service_metrics`, `list_trace_services`, `list_trace_operations`, `find_traces`) return usable raw queries and richer service-level trace/metrics summaries
 
 ## Quick Commands
 
@@ -59,7 +59,7 @@ If `rg` prints placeholder lines, replace them with project-specific content.
 
 - serves one request through three generic services
 - writes one log file per service to `.agent/harness/observability/runtime/logs/`
-- exposes one Prometheus-style metrics endpoint per service inside the observability network
+- exposes one Prometheus-style metrics endpoint per service inside the observability network with service-labeled request, latency, status, and downstream-call metrics
 - sends OTLP traces to VictoriaTraces over HTTP with preserved service identity
 
 This gives you evidence that the harness can ingest the same shape of clustered local telemetry your coding agent will later wire into your real services.
@@ -71,7 +71,7 @@ Use this prompt with your coding assistant inside the target repository:
 ```text
 I just installed codex-promax in this repository. Please verify that the docs scaffold, shared agent context cache, readiness prompts, local observability stack, and MCP observability tools are all working end to end.
 
-Run codex-promax doctor, confirm the shared prompt files and docs exist (including docs/LOCAL_TELEMETRY_SETUP.md), check that the Codex/Claude/OpenCode config files still parse, start the observability Docker stack, run the smoke checks, and validate the three MCP observability tools with real queries that cover the whole chained fixture (gateway-api, workflow-api, data-api, and codex_promax_fixture_requests_total).
+Run codex-promax doctor, confirm the shared prompt files and docs exist (including docs/LOCAL_TELEMETRY_SETUP.md), check that the Codex/Claude/OpenCode config files still parse, start the observability Docker stack, run the smoke checks, and validate the MCP observability tools with real queries that cover the whole chained fixture. Include at least raw log lookup, raw metrics lookup, service metric summarization, trace service listing, trace operation lookup, and one real trace search for gateway-api.
 
 If anything fails, apply the smallest safe fix and re-test until all checks pass or a clear blocker is found. Write the full evidence (commands run, key outputs, MCP results, fixes, and final readiness status) to docs/generated/observability-validation.md, then stop the Docker stack and return a short PASS/FAIL summary with remaining risks.
 ```
@@ -80,6 +80,7 @@ If anything fails, apply the smallest safe fix and re-test until all checks pass
 
 - `codex-promax doctor` prints `OK`
 - `smoke.sh` prints PASS for logs, metrics, traces
-- all three MCP tools return successful responses with expected signal
-- the metrics query returns `codex_promax_fixture_requests_total`
+- the raw MCP query tools (`query_logs`, `query_metrics`, `query_traces`) return successful responses with expected signal
+- `summarize_service_metrics` returns service-labeled metrics including `codex_promax_fixture_requests_total` and `codex_promax_fixture_last_request_duration_milliseconds`
+- `list_trace_services`, `list_trace_operations`, and `find_traces` return useful trace detail for the chained fixture
 - `docs/generated/observability-validation.md` is updated with the current run details

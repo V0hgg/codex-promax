@@ -34,7 +34,11 @@ docker compose -f .agent/harness/observability/docker-compose.yml down -v
 - Local trace export configured: PASS/FAIL
 - MCP `query_logs`: PASS/FAIL
 - MCP `query_metrics`: PASS/FAIL
+- MCP `summarize_service_metrics`: PASS/FAIL
 - MCP `query_traces`: PASS/FAIL
+- MCP `list_trace_services`: PASS/FAIL
+- MCP `list_trace_operations`: PASS/FAIL
+- MCP `find_traces`: PASS/FAIL
 
 ## Evidence
 
