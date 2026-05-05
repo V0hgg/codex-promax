@@ -88,9 +88,11 @@ describe("init", () => {
     expect(io.lines.some((line) => line.includes("Veloran is ready."))).toBe(true);
     expect(io.lines.some((line) => line.includes("Core skills installed:"))).toBe(true);
     expect(io.lines.some((line) => line.includes("init-harness"))).toBe(true);
-    expect(io.lines.some((line) => line.includes("prompt init-harness"))).toBe(true);
+    expect(io.lines.some((line) => line.includes("@init-harness"))).toBe(true);
+    expect(io.lines.some((line) => line.includes("@execplan-create"))).toBe(true);
     expect(io.lines.some((line) => line.includes("real project start paths"))).toBe(true);
-    expect(io.lines.some((line) => line.includes("doctor --apps"))).toBe(true);
+    expect(io.lines.some((line) => line.includes("veloran --help"))).toBe(true);
+    expect(io.lines.some((line) => line.includes("doctor --apps"))).toBe(false);
   });
 
   it("supports opting into the minimal standard preset explicitly", async () => {

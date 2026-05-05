@@ -289,9 +289,13 @@ main() {
   grep -q 'Veloran is ready\.' "$INIT_LOG" || fail "Init output missing ready summary"
   grep -q 'Core skills installed:' "$INIT_LOG" || fail "Init output missing core skills heading"
   grep -q 'init-harness' "$INIT_LOG" || fail "Init output missing init-harness handoff"
-  grep -q 'prompt init-harness' "$INIT_LOG" || fail "Init output missing harness prompt command"
+  grep -q '@init-harness' "$INIT_LOG" || fail "Init output missing skill mention handoff"
+  grep -q '@execplan-create' "$INIT_LOG" || fail "Init output missing execplan-create handoff"
   grep -q 'real project start paths' "$INIT_LOG" || fail "Init output missing real start path guidance"
-  grep -q 'doctor --apps codex,claude,opencode,antigravity --preset harness' "$INIT_LOG" || fail "Init output missing scoped doctor command"
+  grep -q 'veloran --help' "$INIT_LOG" || fail "Init output missing advanced help guidance"
+  if grep -q 'doctor --apps' "$INIT_LOG"; then
+    fail "Init output should not show advanced doctor command by default"
+  fi
   if grep -Eq '^(Create|Skip|Update):' "$INIT_LOG"; then
     fail "Init output should be quiet by default"
   fi

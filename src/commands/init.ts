@@ -1,4 +1,3 @@
-import { spawnSync } from "node:child_process";
 import fs from "node:fs";
 import path from "node:path";
 import readline from "node:readline";
@@ -39,50 +38,6 @@ const defaultIo: InitIo = {
     console.log(line);
   },
 };
-
-function shellQuote(value: string): string {
-  return `'${value.replace(/'/g, `'\\''`)}'`;
-}
-
-function powershellQuote(value: string): string {
-  return value.replace(/'/g, "''");
-}
-
-function hasPosixCommand(command: string): boolean {
-  return spawnSync("sh", ["-lc", `command -v ${command} >/dev/null 2>&1`], {
-    stdio: "ignore",
-  }).status === 0;
-}
-
-function resolveClipboardCommand(promptPath: string): string | null {
-  if (process.platform === "darwin" && hasPosixCommand("pbcopy")) {
-    return `pbcopy < ${shellQuote(promptPath)}`;
-  }
-
-  if (process.platform === "linux") {
-    if (hasPosixCommand("wl-copy")) {
-      return `wl-copy < ${shellQuote(promptPath)}`;
-    }
-
-    if (hasPosixCommand("xclip")) {
-      return `xclip -selection clipboard < ${shellQuote(promptPath)}`;
-    }
-  }
-
-  if (process.platform === "win32") {
-    const probe = spawnSync(
-      "powershell",
-      ["-NoProfile", "-Command", "$PSVersionTable.PSVersion.Major"],
-      { stdio: "ignore" },
-    );
-
-    if (probe.status === 0) {
-      return `powershell -NoProfile -Command "Get-Content -Raw '${powershellQuote(promptPath)}' | Set-Clipboard"`;
-    }
-  }
-
-  return null;
-}
 
 function getPackageVersion(): string {
   const packageJsonPath = path.resolve(__dirname, "..", "..", "package.json");
@@ -477,10 +432,7 @@ function printScopeList(io: InitIo): void {
   io.log("  both: write project files and user-global skills");
 }
 
-function printHarnessNextSteps(io: InitIo, initHarnessSkillPath: string | null, appList: string): void {
-  const promptCommand = "npx -y veloran@latest prompt init-harness";
-  const clipboardCommand = initHarnessSkillPath ? resolveClipboardCommand(initHarnessSkillPath) : null;
-
+function printHarnessNextSteps(io: InitIo): void {
   io.log("");
   io.log("Veloran is ready.");
   io.log("");
@@ -490,43 +442,12 @@ function printHarnessNextSteps(io: InitIo, initHarnessSkillPath: string | null, 
   }
   io.log("");
   io.log("Next step:");
-  io.log("  Mention the init-harness skill in your coding agent, or run:");
-  io.log(`    ${promptCommand}`);
-  io.log("");
-
-  if (clipboardCommand) {
-    io.log("If your app discovers skills from files, the project-local skill can also be copied with:");
-    io.log(`  ${clipboardCommand}`);
-  } else if (initHarnessSkillPath) {
-    io.log("If your app discovers skills from files, the project-local skill is at:");
-    io.log(`  ${initHarnessSkillPath}`);
-  } else {
-    io.log("If your app does not discover skills automatically, print the harness prompt:");
-    io.log(`  ${promptCommand}`);
-  }
-
+  io.log("  Open your coding agent and mention @init-harness.");
+  io.log("  Then use @execplan-create and @execplan-execute for planned work.");
   io.log("");
   io.log("The init-harness workflow will reuse real project start paths when they are discoverable.");
   io.log("If secrets, database URLs, or service endpoints are missing, it will prepare the config files and ask only for those values.");
-  io.log("");
-  io.log("Optional check after setup:");
-  io.log(`  npx -y veloran@latest doctor --apps ${appList} --preset harness`);
-}
-
-function primaryInitHarnessSkillPath(config: ReturnType<typeof resolveConfig>): string | null {
-  if (config.apps.needsAntigravitySkills) {
-    return config.antigravityInitHarnessSkillPath;
-  }
-
-  if (config.apps.needsClaudeSkills) {
-    return config.claudeInitHarnessSkillPath;
-  }
-
-  if (config.apps.needsSharedSkills) {
-    return config.initHarnessSkillPath;
-  }
-
-  return null;
+  io.log("Run `veloran --help` for advanced commands.");
 }
 
 function shouldIncludePresetDestination(destinationRelativePath: string, config: ReturnType<typeof resolveConfig>): boolean {
@@ -846,7 +767,7 @@ export async function runInit(options: CommonOptions, io: InitIo = defaultIo): P
 
   if (!config.dryRun) {
     if (scopeIncludesProject(config.installScope)) {
-      printHarnessNextSteps(io, primaryInitHarnessSkillPath(config), config.apps.values.join(","));
+      printHarnessNextSteps(io);
     } else {
       io.log("");
       io.log("Veloran user skills are ready.");
