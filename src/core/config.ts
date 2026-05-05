@@ -12,6 +12,9 @@ export interface CommonOptions {
   apps?: string;
   assistants?: string;
   scope?: string;
+  magic?: boolean;
+  path?: string;
+  installPath?: string;
   yes?: boolean;
   listApps?: boolean;
   listScopes?: boolean;
@@ -24,10 +27,14 @@ export interface CommonOptions {
   skillsDir?: string;
   claudeSkillsDir?: string;
   antigravitySkillsDir?: string;
+  userHome?: string;
   userSkillsDir?: string;
   codexUserSkillsDir?: string;
   claudeUserSkillsDir?: string;
   antigravityUserSkillsDir?: string;
+  userAgentsFile?: string;
+  userClaudeFile?: string;
+  userGeminiFile?: string;
   force?: boolean;
   dryRun?: boolean;
   verbose?: boolean;
@@ -41,6 +48,9 @@ export interface ResolvedConfig {
   yes: boolean;
   preset: InitPreset;
   userHomePath: string;
+  userAgentsFilePath: string;
+  userClaudeFilePath: string;
+  userGeminiFilePath: string;
   agentsFilePath: string;
   claudeFilePath: string;
   geminiFilePath: string;
@@ -98,12 +108,12 @@ export function resolveConfig(options: CommonOptions, cwd: string = process.cwd(
     throw new Error("Use either --apps or --assistants, not both.");
   }
 
-  const root = resolveRoot(options.root, cwd);
+  const root = resolveRoot(options.root ?? options.installPath ?? options.path, cwd);
   const apps = options.apps ? parseApps(options.apps) : parseAssistants(options.assistants ?? "all");
   const assistants = apps;
   const installScope = parseInstallScope(options.scope);
   const preset = parsePreset(options.preset);
-  const userHomePath = path.resolve(process.env.VELORAN_HOME ?? os.homedir());
+  const userHomePath = path.resolve(options.userHome ?? process.env.VELORAN_HOME ?? os.homedir());
 
   const agentsFilePath = resolvePath(root, options.agentsFile ?? "AGENTS.md");
   const claudeFilePath = resolvePath(root, options.claudeFile ?? "CLAUDE.md");
@@ -128,6 +138,18 @@ export function resolveConfig(options: CommonOptions, cwd: string = process.cwd(
   const antigravityUserSkillsDirPath = resolveUserPath(
     userHomePath,
     options.antigravityUserSkillsDir ?? ".gemini/antigravity/skills",
+  );
+  const userAgentsFilePath = resolveUserPath(
+    userHomePath,
+    options.userAgentsFile ?? ".veloran/prompts/AGENTS.md",
+  );
+  const userClaudeFilePath = resolveUserPath(
+    userHomePath,
+    options.userClaudeFile ?? ".veloran/prompts/CLAUDE.md",
+  );
+  const userGeminiFilePath = resolveUserPath(
+    userHomePath,
+    options.userGeminiFile ?? ".veloran/prompts/GEMINI.md",
   );
 
   const execplanCreateSkillPath = path.join(skillsDirPath, "execplan-create", "SKILL.md");
@@ -168,6 +190,9 @@ export function resolveConfig(options: CommonOptions, cwd: string = process.cwd(
     yes: Boolean(options.yes),
     preset,
     userHomePath,
+    userAgentsFilePath,
+    userClaudeFilePath,
+    userGeminiFilePath,
     agentsFilePath,
     claudeFilePath,
     geminiFilePath,

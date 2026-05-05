@@ -16,6 +16,7 @@ import {
 } from "../core/fsPlan";
 import { scopeIncludesProject, scopeIncludesUser } from "../core/installScope";
 import { presetTemplateDirectory } from "../core/presets";
+import { resolveRoot } from "../core/root";
 import { listTemplateFiles, readTemplate } from "../core/templates";
 
 export interface InitIo {
@@ -102,7 +103,12 @@ function canPrompt(io: InitIo): boolean {
 async function resolveInteractiveOptions(options: CommonOptions, io: InitIo): Promise<CommonOptions> {
   const hasAppSelection = Boolean(options.apps || options.assistants);
   const hasScopeSelection = Boolean(options.scope);
-  const shouldPrompt = canPrompt(io) && !options.yes && (!hasAppSelection || !hasScopeSelection);
+  const hasInstallPath = Boolean(options.root || options.installPath || options.path);
+  const hasUserHome = Boolean(options.userHome || process.env.VELORAN_HOME);
+  const shouldPrompt =
+    canPrompt(io)
+    && !options.yes
+    && (Boolean(options.magic) || !hasAppSelection || !hasScopeSelection);
 
   if (!shouldPrompt) {
     return options;
@@ -113,9 +119,36 @@ async function resolveInteractiveOptions(options: CommonOptions, io: InitIo): Pr
   if (!hasScopeSelection) {
     const answer = (await promptLine(
       io,
-      "Where should Veloran install harness files? project, user, or both [project]: ",
+      "Install Veloran where? local project, global user, or both [local]: ",
     )).trim();
-    next.scope = answer || "project";
+    const normalized = answer.toLowerCase();
+    next.scope = normalized === "global" ? "user" : normalized === "local" ? "project" : answer || "project";
+  }
+
+  const chosenScope = (next.scope ?? "project").trim().toLowerCase();
+  const includesProject = chosenScope === "project" || chosenScope === "both" || chosenScope === "local";
+  const includesUser = chosenScope === "user" || chosenScope === "both" || chosenScope === "global";
+
+  if (includesProject && !hasInstallPath) {
+    const defaultRoot = resolveRoot(undefined, process.cwd());
+    const answer = (await promptLine(
+      io,
+      `Install local project harness at which path? [${defaultRoot}]: `,
+    )).trim();
+    if (answer.length > 0) {
+      next.root = answer;
+    }
+  }
+
+  if (includesUser && !hasUserHome) {
+    const defaultHome = process.env.VELORAN_HOME ?? process.env.HOME ?? "~";
+    const answer = (await promptLine(
+      io,
+      `Install global skills/prompts under which user path? [${defaultHome}]: `,
+    )).trim();
+    if (answer.length > 0) {
+      next.userHome = answer;
+    }
   }
 
   if (!hasAppSelection) {
@@ -414,6 +447,33 @@ function writeUserInstall(config: ReturnType<typeof resolveConfig>, actionContex
 
   for (const skillDirectory of userSkillDirectories(config)) {
     writeCoreSkillsToDirectory(skillDirectory, actionContext, config.force);
+  }
+
+  if (config.apps.needsAgentsFile) {
+    writeManagedFile(
+      config.userAgentsFilePath,
+      readTemplate("AGENTS.managed.md"),
+      actionContext,
+      false,
+    );
+  }
+
+  if (config.apps.needsClaudeFile) {
+    writeManagedFile(
+      config.userClaudeFilePath,
+      readTemplate("CLAUDE.managed.md"),
+      actionContext,
+      false,
+    );
+  }
+
+  if (config.apps.needsGeminiFile) {
+    writeManagedFile(
+      config.userGeminiFilePath,
+      readTemplate("GEMINI.managed.md"),
+      actionContext,
+      false,
+    );
   }
 
   const manifest = buildManifest(config, "user");

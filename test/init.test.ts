@@ -310,6 +310,63 @@ describe("init", () => {
     }
   });
 
+  it("appends user-scope prompt blocks without overwriting user prompt text", async () => {
+    const userHome = createTempWorkspace("veloran-home-");
+    writeFile(userHome, ".veloran/prompts/AGENTS.md", "# My existing user prompt\n\nKeep this.\n");
+
+    await runInit({
+      apps: "agents",
+      scope: "user",
+      userHome,
+      yes: true,
+    });
+
+    const first = readFile(userHome, ".veloran/prompts/AGENTS.md");
+    expect(first).toContain("# My existing user prompt");
+    expect(first).toContain("Keep this.");
+    expect(first).toContain("<!-- execplans:begin -->");
+    expect(first).toContain("<!-- execplans:end -->");
+
+    await runInit({
+      apps: "agents",
+      scope: "user",
+      userHome,
+      yes: true,
+      force: true,
+    });
+
+    const second = readFile(userHome, ".veloran/prompts/AGENTS.md");
+    expect(second).toContain("# My existing user prompt");
+    expect(second.match(/<!-- execplans:begin -->/g)?.length).toBe(1);
+  });
+
+  it("runs the magic installer with local path and app prompts", async () => {
+    const root = createTempWorkspace();
+    initGitMarker(root);
+    const answers = ["local", root, "antigravity", "n"];
+    const lines: string[] = [];
+    const io = {
+      log(line: string) {
+        lines.push(line);
+      },
+      async prompt() {
+        const answer = answers.shift();
+        if (answer === undefined) {
+          throw new Error("Unexpected prompt");
+        }
+
+        return answer;
+      },
+    };
+
+    await runInit({ magic: true }, io);
+
+    expect(answers).toEqual([]);
+    expect(fs.existsSync(path.join(root, "GEMINI.md"))).toBe(true);
+    expect(fs.existsSync(path.join(root, ".agent", "skills", "init-harness", "SKILL.md"))).toBe(true);
+    expect(fs.existsSync(path.join(root, ".codex"))).toBe(false);
+  });
+
   it("requires explicit confirmation before real user-scope writes", async () => {
     await expect(runInit({ apps: "codex", scope: "user" })).rejects.toThrow(
       "User-scope install requires --yes",

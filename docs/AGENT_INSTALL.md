@@ -10,8 +10,8 @@ Set up a project-local Veloran harness by default, validate it, and then continu
 
 1. Work from the current repository root. If the user pasted the install prompt in a nested folder, detect the real repo root before running commands.
 2. Inspect the repository briefly before changing anything. Reuse existing structure and avoid inventing a second workflow.
-3. Prefer `npx -y veloran@latest`; do not require a global npm install unless the environment does.
-4. Run:
+3. Prefer `npx -y veloran@latest`; do not require a global npm install unless the environment does. If the user asked for the magic installer, run `npx -y veloran@latest` or `npx -y veloran@latest magic` and answer its local/global/path prompts.
+4. For deterministic local project setup, run:
 
    ```bash
    npx -y veloran@latest init --scope project --yes
@@ -28,6 +28,8 @@ Set up a project-local Veloran harness by default, validate it, and then continu
    ```bash
    npx -y veloran@latest init --scope user --apps codex,claude,antigravity --dry-run
    ```
+
+   For a real global install to a chosen path, use `--user-home <path> --yes`. Veloran appends managed prompt blocks to user prompt files under that path; it must preserve the user's existing prompt text.
 
 6. After init succeeds, run:
 

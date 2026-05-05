@@ -6,10 +6,16 @@ It scaffolds instructions, skills, ExecPlans, context, memory, local harness scr
 
 ## Quick Start
 
-Use the latest package without installing globally:
+Use the latest package without installing globally and launch the magic installer:
 
 ```bash
-npx -y veloran@latest init
+npx -y veloran@latest
+```
+
+The magic installer asks whether to install locally, globally, or both, then asks for the target path and vendor/apps. You can also run it explicitly:
+
+```bash
+npx -y veloran@latest magic
 ```
 
 Install a project-local multi-app harness non-interactively:
@@ -22,6 +28,12 @@ Preview user-global skill installation without mutating your machine:
 
 ```bash
 npx -y veloran@latest init --scope user --apps claude,codex --dry-run
+```
+
+Install global skills/prompts under a specific path:
+
+```bash
+npx -y veloran@latest init --scope user --apps claude,codex --user-home ~/.config/veloran --yes
 ```
 
 Then hand the harness workflow to your coding agent:
@@ -50,7 +62,7 @@ Project scope is the default and writes reviewable files inside the target repos
 - docs for harness setup, app targets, skills, memory, and validation
 - `.agent/veloran-manifest.json` recording the selected apps, scope, preset, and package version
 
-User scope writes user-global skills only. Real user-scope writes require `--yes` or interactive confirmation. Use `--dry-run` first.
+User scope writes user-global skills and appends Veloran managed prompt blocks to user prompt files under the chosen user path. It does not overwrite the user's existing prompt text. Real user-scope writes require `--yes` or interactive confirmation. Use `--dry-run` first.
 
 ## Core Skills
 
@@ -105,6 +117,10 @@ npx -y veloran@latest init --preset standard
 
 ```bash
 npx -y veloran@latest init --dry-run
+npx -y veloran@latest magic
+npx -y veloran@latest --path /path/to/repo
+npx -y veloran@latest init --scope user --user-home ~/.config/veloran --yes
+npx -y veloran@latest init --scope user --user-agents-file .veloran/prompts/AGENTS.md --dry-run
 npx -y veloran@latest init --verbose
 npx -y veloran@latest init --force
 npx -y veloran@latest init --list-apps
