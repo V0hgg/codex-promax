@@ -467,12 +467,12 @@ async function resolveInteractiveOptions(options: CommonOptions, io: InitIo): Pr
       io,
       "Install Veloran where?",
       [
+        { label: "Global user", value: "user", hint: "recommended; write user-global skills, prompts, and knowledge", aliases: ["global"] },
         { label: "Local project", value: "project", hint: "write repository-local harness files", aliases: ["local"] },
-        { label: "Global user", value: "user", hint: "write user-global skills, prompts, and knowledge", aliases: ["global"] },
         { label: "Both", value: "both", hint: "install project and user-global files" },
       ],
-      "project",
-      "Install Veloran where? local project, global user, or both [local]: ",
+      "user",
+      "Install Veloran where? global user, local project, or both [global]: ",
     );
   }
 

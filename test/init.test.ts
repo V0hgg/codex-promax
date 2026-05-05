@@ -421,7 +421,7 @@ describe("init", () => {
     expect(fs.existsSync(path.join(root, ".claude"))).toBe(false);
   });
 
-  it("defaults user-scope confirmation menus to yes", async () => {
+  it("defaults magic installer location to user and confirmation to yes", async () => {
     const userHome = createTempWorkspace();
     const selectDefaults = new Map<string, string>();
     const io = {
@@ -432,7 +432,7 @@ describe("init", () => {
       async select(question: string, _choices: unknown[], defaultValue: string) {
         selectDefaults.set(question, defaultValue);
         if (question === "Install Veloran where?") {
-          return "user";
+          return defaultValue;
         }
         if (question === "User-scope install can affect all repositories for this user. Continue?") {
           return defaultValue;
@@ -446,6 +446,7 @@ describe("init", () => {
 
     await runInit({ magic: true, userHome }, io);
 
+    expect(selectDefaults.get("Install Veloran where?")).toBe("user");
     expect(selectDefaults.get("User-scope install can affect all repositories for this user. Continue?")).toBe(
       "yes",
     );

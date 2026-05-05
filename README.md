@@ -12,7 +12,7 @@ Run this from the repository you want to prepare:
 npx -y veloran@latest
 ```
 
-The installer shows menus for install scope and app targets. For most repositories, choose `Local project` and the coding apps you use.
+The installer shows menus for install scope and app targets. For most users, choose the recommended `Global user` install and the coding apps you use.
 
 ## Use The Skills
 
