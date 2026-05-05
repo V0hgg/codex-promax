@@ -3,6 +3,8 @@ import path from "node:path";
 
 import YAML from "yaml";
 
+import { AppTargets } from "./apps";
+import { selectedAppAdapters } from "./appAdapters";
 import { MANAGED_BEGIN, MANAGED_END } from "./managedBlock";
 import { InitPreset } from "./presets";
 
@@ -13,43 +15,31 @@ const REQUIRED_PLAN_HEADINGS = [
   "## Outcomes & Retrospective",
 ];
 
-const CODEX_MAX_REQUIRED_RELATIVE_PATHS = [
+const HARNESS_COMMON_REQUIRED_RELATIVE_PATHS = [
   "ARCHITECTURE.md",
   ".agent/context/README.md",
   ".agent/context/repo-overview.md",
   ".agent/context/commands.md",
   ".agent/context/testing.md",
   ".agent/context/architecture-notes.md",
+  ".agent/memory/README.md",
+  ".agent/memory/INDEX.md",
   ".agent/prompts/onboard-repository.md",
   ".agent/prompts/validate-readiness.md",
   ".agent/prompts/debugging-handoff.md",
   ".agent/prompts/release-checks.md",
   ".agent/prompts/integrate-local-telemetry.md",
-  ".claude/agents/browser-debugger.md",
-  ".claude/agents/code-mapper.md",
-  ".claude/agents/docs-researcher.md",
-  ".claude/agents/reviewer.md",
-  ".claude/rules/context-cache.md",
-  ".claude/rules/verification.md",
-  ".claude/skills/ui-legibility/SKILL.md",
-  ".claude/settings.json",
-  ".mcp.json",
-  ".codex/config.toml",
-  ".codex/agents/browser-debugger.toml",
-  ".codex/agents/code-mapper.toml",
-  ".codex/agents/docs-researcher.toml",
-  ".codex/agents/reviewer.toml",
-  ".opencode/agents/browser-debugger.md",
-  ".opencode/agents/code-mapper.md",
-  ".opencode/agents/docs-researcher.md",
-  ".opencode/agents/reviewer.md",
-  ".opencode/commands/implementation-plan.md",
-  ".opencode/commands/review-changes.md",
-  ".opencode/commands/validate-readiness.md",
+  ".agent/veloran-manifest.json",
   "docs/design-docs/index.md",
   "docs/exec-plans/tech-debt-tracker.md",
   "docs/generated/db-schema.md",
   "docs/generated/observability-validation.md",
+  "docs/generated/harness-validation.md",
+  "docs/HARNESS_SETUP.md",
+  "docs/APP_TARGETS.md",
+  "docs/SKILLS.md",
+  "docs/MEMORY.md",
+  "docs/ANTIGRAVITY_SETUP.md",
   "docs/OBSERVABILITY_RUNBOOK.md",
   "docs/product-specs/index.md",
   "docs/references/design-system-reference-llms.txt",
@@ -70,9 +60,7 @@ const CODEX_MAX_REQUIRED_RELATIVE_PATHS = [
   ".agent/harness/observability/smoke.sh",
   ".agent/harness/observability/vector/vector.yaml",
   ".agent/harness/mcp/observability-server/server.mjs",
-  ".agents/skills/ui-legibility/SKILL.md",
   "docs/LOCAL_TELEMETRY_SETUP.md",
-  "opencode.json",
 ];
 
 function hasTomlField(content: string, fieldName: string): boolean {
@@ -121,19 +109,28 @@ function parseJsonFile(filePath: string): Record<string, unknown> | undefined {
 
 export interface DoctorCheckOptions {
   root: string;
+  apps: AppTargets;
   preset: InitPreset;
   plansFilePath: string;
   execplansDirPath: string;
   agentsFilePath: string;
   claudeFilePath: string;
+  geminiFilePath: string;
   execplanCreateSkillPath: string;
   execplanExecuteSkillPath: string;
+  initHarnessSkillPath: string;
   claudeExecplanCreateSkillPath: string;
   claudeExecplanExecuteSkillPath: string;
+  claudeInitHarnessSkillPath: string;
+  antigravityExecplanCreateSkillPath: string;
+  antigravityExecplanExecuteSkillPath: string;
+  antigravityInitHarnessSkillPath: string;
   checkAgentsFile: boolean;
   checkClaudeFile: boolean;
+  checkGeminiFile: boolean;
   checkSharedSkills: boolean;
   checkClaudeSkills: boolean;
+  checkAntigravitySkills: boolean;
 }
 
 function validateSkillFiles(skillFiles: string[], fixes: string[]): void {
@@ -200,6 +197,19 @@ export function runDoctorChecks(options: DoctorCheckOptions): string[] {
     }
   }
 
+  if (options.checkGeminiFile) {
+    if (!fs.existsSync(options.geminiFilePath)) {
+      fixes.push(`Fix: Create ${options.geminiFilePath} with Veloran managed block (run \`veloran init --apps antigravity --scope project\`).`);
+    } else {
+      const content = fs.readFileSync(options.geminiFilePath, "utf8");
+      if (!hasManagedMarkers(content)) {
+        fixes.push(
+          `Fix: Add ${MANAGED_BEGIN} and ${MANAGED_END} markers to ${options.geminiFilePath} (or rerun \`veloran init --apps antigravity --scope project\`).`,
+        );
+      }
+    }
+  }
+
   if (fs.existsSync(options.plansFilePath)) {
     const plansContent = fs.readFileSync(options.plansFilePath, "utf8");
     for (const heading of REQUIRED_PLAN_HEADINGS) {
@@ -211,28 +221,74 @@ export function runDoctorChecks(options: DoctorCheckOptions): string[] {
 
   if (options.checkSharedSkills) {
     validateSkillFiles(
-      [options.execplanCreateSkillPath, options.execplanExecuteSkillPath],
+      [options.initHarnessSkillPath, options.execplanCreateSkillPath, options.execplanExecuteSkillPath],
       fixes,
     );
   }
 
   if (options.checkClaudeSkills) {
     validateSkillFiles(
-      [options.claudeExecplanCreateSkillPath, options.claudeExecplanExecuteSkillPath],
+      [
+        options.claudeInitHarnessSkillPath,
+        options.claudeExecplanCreateSkillPath,
+        options.claudeExecplanExecuteSkillPath,
+      ],
       fixes,
     );
   }
 
-  if (options.preset === "codex-max") {
-    for (const relativePath of CODEX_MAX_REQUIRED_RELATIVE_PATHS) {
+  if (options.checkAntigravitySkills) {
+    validateSkillFiles(
+      [
+        options.antigravityInitHarnessSkillPath,
+        options.antigravityExecplanCreateSkillPath,
+        options.antigravityExecplanExecuteSkillPath,
+      ],
+      fixes,
+    );
+  }
+
+  if (options.preset === "harness") {
+    for (const relativePath of HARNESS_COMMON_REQUIRED_RELATIVE_PATHS) {
       const absolutePath = path.resolve(options.root, relativePath);
       if (!fs.existsSync(absolutePath)) {
-        fixes.push(`Fix: Create ${absolutePath} (run \`veloran init\`).`);
+        fixes.push(`Fix: Create ${absolutePath} (run \`veloran init --preset harness\`).`);
+      }
+    }
+
+    for (const adapter of selectedAppAdapters(options.apps.values)) {
+      for (const relativePath of adapter.projectRequiredPaths) {
+        if (relativePath === "AGENTS.md" || relativePath === "CLAUDE.md" || relativePath === "GEMINI.md") {
+          continue;
+        }
+
+        const absolutePath = path.resolve(options.root, relativePath);
+        if (!fs.existsSync(absolutePath)) {
+          fixes.push(
+            `Fix: Create ${absolutePath} (run \`veloran init --apps ${adapter.id} --scope project\`).`,
+          );
+        }
+      }
+    }
+
+    const manifestPath = path.resolve(options.root, ".agent/veloran-manifest.json");
+    if (fs.existsSync(manifestPath)) {
+      const manifest = parseJsonFile(manifestPath);
+      if (!manifest) {
+        fixes.push(`Fix: Make ${manifestPath} valid JSON (or rerun \`veloran init --preset harness --force\`).`);
+      } else {
+        if (manifest.package !== "veloran") {
+          fixes.push(`Fix: Set package to "veloran" in ${manifestPath} (or rerun \`veloran init --preset harness --force\`).`);
+        }
+
+        if (!Array.isArray(manifest.apps) || manifest.apps.length === 0) {
+          fixes.push(`Fix: Set non-empty apps array in ${manifestPath} (or rerun \`veloran init --preset harness --force\`).`);
+        }
       }
     }
 
     const codexConfigPath = path.resolve(options.root, ".codex/config.toml");
-    if (fs.existsSync(codexConfigPath)) {
+    if (options.apps.needsCodexFiles && fs.existsSync(codexConfigPath)) {
       const codexConfig = fs.readFileSync(codexConfigPath, "utf8");
       if (!codexConfig.includes("project_doc_fallback_filenames")) {
         fixes.push(
@@ -272,7 +328,7 @@ export function runDoctorChecks(options: DoctorCheckOptions): string[] {
       ".codex/agents/reviewer.toml",
     ];
 
-    for (const relativePath of codexAgentPaths) {
+    for (const relativePath of options.apps.needsCodexFiles ? codexAgentPaths : []) {
       const absolutePath = path.resolve(options.root, relativePath);
       if (!fs.existsSync(absolutePath)) {
         continue;
@@ -295,7 +351,7 @@ export function runDoctorChecks(options: DoctorCheckOptions): string[] {
     }
 
     const claudeSettingsPath = path.resolve(options.root, ".claude/settings.json");
-    if (fs.existsSync(claudeSettingsPath)) {
+    if (options.apps.needsClaudeNativeFiles && fs.existsSync(claudeSettingsPath)) {
       const claudeSettings = parseJsonFile(claudeSettingsPath);
       if (!claudeSettings) {
         fixes.push(
@@ -327,7 +383,7 @@ export function runDoctorChecks(options: DoctorCheckOptions): string[] {
     }
 
     const claudeProjectMcpPath = path.resolve(options.root, ".mcp.json");
-    if (fs.existsSync(claudeProjectMcpPath)) {
+    if (options.apps.needsClaudeNativeFiles && fs.existsSync(claudeProjectMcpPath)) {
       const mcpConfig = parseJsonFile(claudeProjectMcpPath);
       if (!mcpConfig) {
         fixes.push(
@@ -359,7 +415,7 @@ export function runDoctorChecks(options: DoctorCheckOptions): string[] {
       ".claude/agents/reviewer.md",
     ];
 
-    for (const relativePath of claudeAgentPaths) {
+    for (const relativePath of options.apps.needsClaudeNativeFiles ? claudeAgentPaths : []) {
       const absolutePath = path.resolve(options.root, relativePath);
       if (!fs.existsSync(absolutePath)) {
         continue;
@@ -385,7 +441,7 @@ export function runDoctorChecks(options: DoctorCheckOptions): string[] {
     }
 
     const openCodeConfigPath = path.resolve(options.root, "opencode.json");
-    if (fs.existsSync(openCodeConfigPath)) {
+    if (options.apps.needsOpenCodeFiles && fs.existsSync(openCodeConfigPath)) {
       const openCodeConfig = parseJsonFile(openCodeConfigPath);
       if (!openCodeConfig) {
         fixes.push(
@@ -397,7 +453,7 @@ export function runDoctorChecks(options: DoctorCheckOptions): string[] {
         );
       } else {
         const instructions = openCodeConfig.instructions.filter((value): value is string => typeof value === "string");
-        for (const expectedInstruction of [".agent/context/*.md", ".agent/prompts/*.md"]) {
+        for (const expectedInstruction of [".agent/context/*.md", ".agent/memory/*.md", ".agent/prompts/*.md"]) {
           if (!instructions.includes(expectedInstruction)) {
             fixes.push(
               `Fix: Add "${expectedInstruction}" to ${openCodeConfigPath} instructions (or rerun \`veloran init\`).`,
@@ -414,7 +470,7 @@ export function runDoctorChecks(options: DoctorCheckOptions): string[] {
       ".opencode/agents/reviewer.md",
     ];
 
-    for (const relativePath of openCodeAgentPaths) {
+    for (const relativePath of options.apps.needsOpenCodeFiles ? openCodeAgentPaths : []) {
       const absolutePath = path.resolve(options.root, relativePath);
       if (!fs.existsSync(absolutePath)) {
         continue;
@@ -445,7 +501,7 @@ export function runDoctorChecks(options: DoctorCheckOptions): string[] {
       ".opencode/commands/validate-readiness.md",
     ];
 
-    for (const relativePath of openCodeCommandPaths) {
+    for (const relativePath of options.apps.needsOpenCodeFiles ? openCodeCommandPaths : []) {
       const absolutePath = path.resolve(options.root, relativePath);
       if (!fs.existsSync(absolutePath)) {
         continue;

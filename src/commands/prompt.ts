@@ -55,7 +55,16 @@ function installPromptString(): string {
 }
 
 function telemetryPromptString(): string {
-  return readTemplateRelative("presets/codex-max/.agent/prompts/integrate-local-telemetry.md");
+  return [
+    "Compatibility note: `veloran prompt telemetry` now points to the broader init-harness workflow.",
+    "Use the logs, metrics, and traces sections when you only need telemetry integration.",
+    "",
+    harnessPromptString(),
+  ].join("\n");
+}
+
+function harnessPromptString(): string {
+  return readTemplateRelative("skills/init-harness.SKILL.md");
 }
 
 function buildPlanStub(title: string): string {
@@ -198,9 +207,19 @@ export async function runPromptTelemetry(
   return 0;
 }
 
+export async function runPromptHarness(
+  options: CommonOptions,
+  io: PromptIo = defaultIo,
+): Promise<number> {
+  resolveConfig(options);
+  io.log(harnessPromptString());
+  return 0;
+}
+
 export const promptText = {
   planPromptString,
   execPromptString,
   installPromptString,
   telemetryPromptString,
+  harnessPromptString,
 };

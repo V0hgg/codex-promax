@@ -5,6 +5,7 @@ import { describe, expect, it } from "vitest";
 
 import {
   runPromptExec,
+  runPromptHarness,
   runPromptInstall,
   runPromptPlan,
   runPromptTelemetry,
@@ -87,18 +88,25 @@ describe("prompt", () => {
     );
   });
 
-  it("prints the same telemetry prompt that is scaffolded into codex-max repos", async () => {
+  it("prints the harness workflow through the telemetry compatibility alias", async () => {
     const io = captureIo();
 
     await runPromptTelemetry({ assistants: "all" }, io.io);
 
-    expect(io.lines.join("\n")).toBe(
-      readTemplateRelative("presets/codex-max/.agent/prompts/integrate-local-telemetry.md"),
-    );
-    expect(io.lines.join("\n")).toContain("Keep deployment manifests, production defaults");
-    expect(io.lines.join("\n")).toContain("If the correct start path cannot be inferred safely");
-    expect(io.lines.join("\n")).toContain("service-topology.example.yaml");
-    expect(io.lines.join("\n")).toContain("docs/generated/observability-validation.md");
+    expect(io.lines.join("\n")).toContain("Compatibility note");
+    expect(io.lines.join("\n")).toContain("name: init-harness");
+    expect(io.lines.join("\n")).toContain("logs, metrics, and traces");
+    expect(io.lines.join("\n")).toContain("docs/generated/harness-validation.md");
+  });
+
+  it("prints the init-harness skill as a prompt", async () => {
+    const io = captureIo();
+
+    await runPromptHarness({ apps: "antigravity" }, io.io);
+
+    expect(io.lines.join("\n")).toBe(readTemplateRelative("skills/init-harness.SKILL.md"));
+    expect(io.lines.join("\n")).toContain("name: init-harness");
+    expect(io.lines.join("\n")).toContain(".agent/memory/");
   });
 
   it("writes a stub file with required sections when --out is provided", async () => {

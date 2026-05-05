@@ -1,6 +1,10 @@
 import { spawnSync } from "node:child_process";
+import fs from "node:fs";
 import path from "node:path";
+import { createInterface } from "node:readline/promises";
 
+import { APP_REGISTRY, validAppList } from "../core/apps";
+import { CORE_SKILL_NAMES, CoreSkillName } from "../core/appAdapters";
 import { CommonOptions, resolveConfig } from "../core/config";
 import {
   ActionContext,
@@ -10,10 +14,13 @@ import {
   writeIfMissingOrForce,
   writeManagedFile,
 } from "../core/fsPlan";
+import { scopeIncludesProject, scopeIncludesUser } from "../core/installScope";
+import { presetTemplateDirectory } from "../core/presets";
 import { listTemplateFiles, readTemplate } from "../core/templates";
 
 export interface InitIo {
   log: (line: string) => void;
+  prompt?: (question: string) => Promise<string>;
 }
 
 const defaultIo: InitIo = {
@@ -66,43 +73,171 @@ function resolveClipboardCommand(promptPath: string): string | null {
   return null;
 }
 
-function resolvePromptPrintCommand(promptPath: string): string {
-  if (process.platform === "win32") {
-    return `powershell -NoProfile -Command "Get-Content -Raw '${powershellQuote(promptPath)}'"`;
-  }
-
-  return `cat ${shellQuote(promptPath)}`;
+function getPackageVersion(): string {
+  const packageJsonPath = path.resolve(__dirname, "..", "..", "package.json");
+  return JSON.parse(fs.readFileSync(packageJsonPath, "utf8")).version as string;
 }
 
-function printCodexMaxNextSteps(io: InitIo, promptPath: string): void {
-  const clipboardCommand = resolveClipboardCommand(promptPath);
+async function promptLine(io: InitIo, question: string): Promise<string> {
+  if (io.prompt) {
+    return io.prompt(question);
+  }
+
+  const rl = createInterface({
+    input: process.stdin,
+    output: process.stdout,
+  });
+
+  try {
+    return await rl.question(question);
+  } finally {
+    rl.close();
+  }
+}
+
+function canPrompt(io: InitIo): boolean {
+  return Boolean(io.prompt) || Boolean(process.stdin.isTTY && process.stdout.isTTY);
+}
+
+async function resolveInteractiveOptions(options: CommonOptions, io: InitIo): Promise<CommonOptions> {
+  const hasAppSelection = Boolean(options.apps || options.assistants);
+  const hasScopeSelection = Boolean(options.scope);
+  const shouldPrompt = canPrompt(io) && !options.yes && (!hasAppSelection || !hasScopeSelection);
+
+  if (!shouldPrompt) {
+    return options;
+  }
+
+  const next: CommonOptions = { ...options };
+
+  if (!hasScopeSelection) {
+    const answer = (await promptLine(
+      io,
+      "Where should Veloran install harness files? project, user, or both [project]: ",
+    )).trim();
+    next.scope = answer || "project";
+  }
+
+  if (!hasAppSelection) {
+    const answer = (await promptLine(
+      io,
+      `Which vendor/apps should Veloran support? ${validAppList()} [all]: `,
+    )).trim();
+    next.apps = answer || "all";
+  }
+
+  if (next.force === undefined) {
+    const answer = (await promptLine(io, "Overwrite existing managed files when needed? y/N: ")).trim();
+    next.force = /^y(es)?$/i.test(answer);
+  }
+
+  const scope = (next.scope ?? "project").trim().toLowerCase();
+  if ((scope === "user" || scope === "both" || scope === "global") && !next.dryRun) {
+    const answer = (await promptLine(
+      io,
+      "User-scope install can affect all repositories for this user. Continue? y/N: ",
+    )).trim();
+    if (!/^y(es)?$/i.test(answer)) {
+      throw new Error("User-scope install cancelled.");
+    }
+    next.yes = true;
+  }
+
+  return next;
+}
+
+function printAppList(io: InitIo): void {
+  io.log("Vendor/app targets:");
+  for (const app of Object.values(APP_REGISTRY)) {
+    io.log(`  ${app.id}: ${app.label}`);
+  }
+  io.log("  common: alias for agents");
+  io.log("  all: all supported targets");
+}
+
+function printScopeList(io: InitIo): void {
+  io.log("Install scopes:");
+  io.log("  project: write repository-local harness files");
+  io.log("  user: write user-global skills only");
+  io.log("  both: write project files and user-global skills");
+}
+
+function printHarnessNextSteps(io: InitIo, initHarnessSkillPath: string | null, appList: string): void {
+  const promptCommand = "npx -y veloran@latest prompt init-harness";
+  const clipboardCommand = initHarnessSkillPath ? resolveClipboardCommand(initHarnessSkillPath) : null;
 
   io.log("");
   io.log("Veloran is ready.");
   io.log("");
+  io.log("Core skills installed:");
+  for (const skillName of CORE_SKILL_NAMES) {
+    io.log(`  ${skillName}`);
+  }
+  io.log("");
+  io.log("Next step:");
+  io.log("  Mention the init-harness skill in your coding agent, or run:");
+  io.log(`    ${promptCommand}`);
+  io.log("");
 
   if (clipboardCommand) {
-    io.log("Copy the telemetry prompt:");
+    io.log("If your app discovers skills from files, the project-local skill can also be copied with:");
     io.log(`  ${clipboardCommand}`);
-    io.log("");
-    io.log("Then paste it into your coding agent in this repo and wait for it to finish.");
+  } else if (initHarnessSkillPath) {
+    io.log("If your app discovers skills from files, the project-local skill is at:");
+    io.log(`  ${initHarnessSkillPath}`);
   } else {
-    io.log("Print the telemetry prompt:");
-    io.log(`  ${resolvePromptPrintCommand(promptPath)}`);
-    io.log("");
-    io.log("Then copy the output, paste it into your coding agent in this repo, and wait for it to finish.");
+    io.log("If your app does not discover skills automatically, print the harness prompt:");
+    io.log(`  ${promptCommand}`);
   }
 
-  io.log("If the repo already has a real local cluster/bootstrap start path, the agent will reuse it.");
-  io.log("If the start path is unclear, the agent will inspect first and then ask you for the right local command.");
+  io.log("");
+  io.log("The init-harness workflow will reuse real project start paths when they are discoverable.");
+  io.log("If secrets, database URLs, or service endpoints are missing, it will prepare the config files and ask only for those values.");
   io.log("");
   io.log("Optional check after setup:");
-  io.log("  npx -y veloran@latest doctor");
+  io.log(`  npx -y veloran@latest doctor --apps ${appList} --preset harness`);
 }
 
-function buildPresetTemplateEntries(root: string, preset: string): TemplateCopyEntry[] {
-  const presetPrefix = `presets/${preset}/`;
-  const templateFiles = listTemplateFiles(`presets/${preset}`);
+function primaryInitHarnessSkillPath(config: ReturnType<typeof resolveConfig>): string | null {
+  if (config.apps.needsAntigravitySkills) {
+    return config.antigravityInitHarnessSkillPath;
+  }
+
+  if (config.apps.needsClaudeSkills) {
+    return config.claudeInitHarnessSkillPath;
+  }
+
+  if (config.apps.needsSharedSkills) {
+    return config.initHarnessSkillPath;
+  }
+
+  return null;
+}
+
+function shouldIncludePresetDestination(destinationRelativePath: string, config: ReturnType<typeof resolveConfig>): boolean {
+  if (destinationRelativePath.startsWith(".codex/")) {
+    return config.apps.needsCodexFiles;
+  }
+
+  if (destinationRelativePath.startsWith(".claude/") || destinationRelativePath === ".mcp.json") {
+    return config.apps.needsClaudeNativeFiles;
+  }
+
+  if (destinationRelativePath.startsWith(".opencode/") || destinationRelativePath === "opencode.json") {
+    return config.apps.needsOpenCodeFiles;
+  }
+
+  if (destinationRelativePath.startsWith(".agents/skills/")) {
+    return config.apps.needsSharedSkills;
+  }
+
+  return true;
+}
+
+function buildPresetTemplateEntries(config: ReturnType<typeof resolveConfig>): TemplateCopyEntry[] {
+  const presetDirectory = presetTemplateDirectory(config.preset);
+  const presetPrefix = `presets/${presetDirectory}/`;
+  const templateFiles = listTemplateFiles(`presets/${presetDirectory}`);
 
   return templateFiles.map((templateRelativePath) => {
     if (!templateRelativePath.startsWith(presetPrefix)) {
@@ -117,36 +252,112 @@ function buildPresetTemplateEntries(root: string, preset: string): TemplateCopyE
       : templateDestinationPath;
     return {
       templateRelativePath,
-      destinationAbsolutePath: path.resolve(root, destinationRelativePath),
+      destinationAbsolutePath: path.resolve(config.root, destinationRelativePath),
       executable: destinationRelativePath.endsWith(".sh"),
     };
-  });
+  }).filter((entry) =>
+    shouldIncludePresetDestination(path.relative(config.root, entry.destinationAbsolutePath), config),
+  );
 }
 
-export async function runInit(options: CommonOptions, io: InitIo = defaultIo): Promise<number> {
-  const config = resolveConfig(options);
-  const shouldLogActions = config.dryRun || config.verbose;
+function skillTemplateName(skillName: CoreSkillName): "skills/init-harness.SKILL.md" | "skills/execplan-create.SKILL.md" | "skills/execplan-execute.SKILL.md" {
+  return `skills/${skillName}.SKILL.md` as
+    | "skills/init-harness.SKILL.md"
+    | "skills/execplan-create.SKILL.md"
+    | "skills/execplan-execute.SKILL.md";
+}
 
-  const actionContext: ActionContext = {
-    dryRun: config.dryRun,
-    root: config.root,
-    log: shouldLogActions ? io.log : () => {},
-  };
+function writeCoreSkillsToDirectory(
+  skillDirectoryPath: string,
+  actionContext: ActionContext,
+  force: boolean,
+): void {
+  ensureDirectory(skillDirectoryPath, actionContext);
+  for (const skillName of CORE_SKILL_NAMES) {
+    const skillPath = path.join(skillDirectoryPath, skillName, "SKILL.md");
+    ensureDirectory(path.dirname(skillPath), actionContext);
+    writeIfMissingOrForce(skillPath, readTemplate(skillTemplateName(skillName)), actionContext, force);
+  }
+}
 
+function uniquePaths(paths: string[]): string[] {
+  return Array.from(new Set(paths));
+}
+
+function projectSkillDirectories(config: ReturnType<typeof resolveConfig>): string[] {
+  const directories: string[] = [];
+
+  if (config.apps.needsSharedSkills) {
+    directories.push(config.skillsDirPath);
+  }
+
+  if (config.apps.needsClaudeSkills) {
+    directories.push(config.claudeSkillsDirPath);
+  }
+
+  if (config.apps.needsAntigravitySkills) {
+    directories.push(config.antigravitySkillsDirPath);
+  }
+
+  return uniquePaths(directories);
+}
+
+function userSkillDirectories(config: ReturnType<typeof resolveConfig>): string[] {
+  const directories: string[] = [];
+
+  for (const app of config.apps.values) {
+    if (app === "agents" || app === "opencode") {
+      directories.push(config.userSkillsDirPath);
+    }
+
+    if (app === "codex") {
+      directories.push(config.codexUserSkillsDirPath);
+    }
+
+    if (app === "claude") {
+      directories.push(config.claudeUserSkillsDirPath);
+    }
+
+    if (app === "antigravity") {
+      directories.push(config.antigravityUserSkillsDirPath);
+    }
+  }
+
+  return uniquePaths(directories);
+}
+
+function buildManifest(config: ReturnType<typeof resolveConfig>, scope: "project" | "user"): string {
+  return `${JSON.stringify(
+    {
+      schemaVersion: 1,
+      package: "veloran",
+      version: getPackageVersion(),
+      preset: config.preset,
+      templatePreset: presetTemplateDirectory(config.preset),
+      apps: config.apps.values,
+      installScope: scope,
+      generatedFileFamilies: [
+        "instructions",
+        "skills",
+        "execplans",
+        "context",
+        "memory",
+        "harness",
+        "docs",
+        "mcp-config",
+      ],
+      secretsPolicy:
+        "Do not store secrets in .agent/memory, .agent/context, plans, docs, prompts, transcripts, or validation logs.",
+      generatedAt: new Date().toISOString(),
+    },
+    null,
+    2,
+  )}\n`;
+}
+
+function writeProjectInstall(config: ReturnType<typeof resolveConfig>, actionContext: ActionContext): void {
   ensureDirectory(config.planDirPath, actionContext);
   ensureDirectory(config.execplansDirPath, actionContext);
-
-  if (config.assistants.needsSharedSkills) {
-    ensureDirectory(config.skillsDirPath, actionContext);
-    ensureDirectory(path.dirname(config.execplanCreateSkillPath), actionContext);
-    ensureDirectory(path.dirname(config.execplanExecuteSkillPath), actionContext);
-  }
-
-  if (config.assistants.needsClaudeSkills) {
-    ensureDirectory(config.claudeSkillsDirPath, actionContext);
-    ensureDirectory(path.dirname(config.claudeExecplanCreateSkillPath), actionContext);
-    ensureDirectory(path.dirname(config.claudeExecplanExecuteSkillPath), actionContext);
-  }
 
   writeIfMissingOrForce(config.plansFilePath, readTemplate("PLANS.md"), actionContext, config.force);
   writeIfMissingOrForce(
@@ -156,7 +367,7 @@ export async function runInit(options: CommonOptions, io: InitIo = defaultIo): P
     config.force,
   );
 
-  if (config.assistants.needsAgentsFile) {
+  if (config.apps.needsAgentsFile) {
     writeManagedFile(
       config.agentsFilePath,
       readTemplate("AGENTS.managed.md"),
@@ -165,7 +376,7 @@ export async function runInit(options: CommonOptions, io: InitIo = defaultIo): P
     );
   }
 
-  if (config.assistants.needsClaudeFile) {
+  if (config.apps.needsClaudeFile) {
     writeManagedFile(
       config.claudeFilePath,
       readTemplate("CLAUDE.managed.md"),
@@ -174,44 +385,95 @@ export async function runInit(options: CommonOptions, io: InitIo = defaultIo): P
     );
   }
 
-  if (config.assistants.needsSharedSkills) {
-    writeIfMissingOrForce(
-      config.execplanCreateSkillPath,
-      readTemplate("skills/execplan-create.SKILL.md"),
-      actionContext,
-      config.force,
-    );
-    writeIfMissingOrForce(
-      config.execplanExecuteSkillPath,
-      readTemplate("skills/execplan-execute.SKILL.md"),
+  if (config.apps.needsGeminiFile) {
+    writeManagedFile(
+      config.geminiFilePath,
+      readTemplate("GEMINI.managed.md"),
       actionContext,
       config.force,
     );
   }
 
-  if (config.assistants.needsClaudeSkills) {
-    writeIfMissingOrForce(
-      config.claudeExecplanCreateSkillPath,
-      readTemplate("skills/execplan-create.SKILL.md"),
-      actionContext,
-      config.force,
-    );
-    writeIfMissingOrForce(
-      config.claudeExecplanExecuteSkillPath,
-      readTemplate("skills/execplan-execute.SKILL.md"),
-      actionContext,
-      config.force,
-    );
-  }
-
-  const presetEntries = buildPresetTemplateEntries(config.root, config.preset);
+  const presetEntries = buildPresetTemplateEntries(config);
   applyTemplateEntries(presetEntries, actionContext, config.force);
 
-  if (!config.dryRun && config.preset === "codex-max") {
-    printCodexMaxNextSteps(
-      io,
-      path.resolve(config.root, ".agent", "prompts", "integrate-local-telemetry.md"),
+  for (const skillDirectory of projectSkillDirectories(config)) {
+    writeCoreSkillsToDirectory(skillDirectory, actionContext, config.force);
+  }
+
+  writeIfMissingOrForce(
+    config.manifestPath,
+    buildManifest(config, "project"),
+    actionContext,
+    config.force,
+  );
+}
+
+function writeUserInstall(config: ReturnType<typeof resolveConfig>, actionContext: ActionContext, io: InitIo): void {
+  io.log(`User install home: ${config.userHomePath}`);
+
+  for (const skillDirectory of userSkillDirectories(config)) {
+    writeCoreSkillsToDirectory(skillDirectory, actionContext, config.force);
+  }
+
+  const manifest = buildManifest(config, "user");
+  if (config.dryRun) {
+    io.log("Planned user-scope manifest:");
+    io.log(manifest.trimEnd());
+  }
+
+  writeIfMissingOrForce(config.userManifestPath, manifest, actionContext, config.force);
+}
+
+export async function runInit(options: CommonOptions, io: InitIo = defaultIo): Promise<number> {
+  const interactiveOptions = await resolveInteractiveOptions(options, io);
+
+  if (interactiveOptions.listApps) {
+    printAppList(io);
+    return 0;
+  }
+
+  if (interactiveOptions.listScopes) {
+    printScopeList(io);
+    return 0;
+  }
+
+  const config = resolveConfig(interactiveOptions);
+
+  if (scopeIncludesUser(config.installScope) && !config.dryRun && !config.yes) {
+    throw new Error(
+      "User-scope install requires --yes or interactive confirmation. Run with --dry-run first to preview global writes.",
     );
+  }
+
+  const shouldLogActions = config.dryRun || config.verbose;
+
+  const projectActionContext: ActionContext = {
+    dryRun: config.dryRun,
+    root: config.root,
+    log: shouldLogActions ? io.log : () => {},
+  };
+
+  if (scopeIncludesProject(config.installScope)) {
+    writeProjectInstall(config, projectActionContext);
+  }
+
+  if (scopeIncludesUser(config.installScope)) {
+    const userActionContext: ActionContext = {
+      dryRun: config.dryRun,
+      root: config.userHomePath,
+      log: io.log,
+    };
+    writeUserInstall(config, userActionContext, io);
+  }
+
+  if (!config.dryRun) {
+    if (scopeIncludesProject(config.installScope)) {
+      printHarnessNextSteps(io, primaryInitHarnessSkillPath(config), config.apps.values.join(","));
+    } else {
+      io.log("");
+      io.log("Veloran user skills are ready.");
+    }
   }
 
   return 0;

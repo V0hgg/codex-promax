@@ -1,41 +1,61 @@
 # Veloran Agent Install Guide
 
-This guide is the source of truth for coding agents that are asked to install Veloran in an existing repository.
+This guide is the source of truth for coding agents asked to install Veloran in an existing repository.
 
 ## Goal
 
-Set up Veloran end-to-end in the current repository with minimal user effort and without unnecessary prompts.
+Set up a project-local Veloran harness by default, validate it, and then continue into the generated `init-harness` workflow when possible.
 
 ## Workflow
 
 1. Work from the current repository root. If the user pasted the install prompt in a nested folder, detect the real repo root before running commands.
-2. Inspect the repository briefly before changing anything. Reuse existing project structure and avoid inventing a second workflow when the repo already has one.
-3. Prefer running Veloran with `npx -y veloran@latest` so no global install is required unless the environment clearly requires a different approach.
+2. Inspect the repository briefly before changing anything. Reuse existing structure and avoid inventing a second workflow.
+3. Prefer `npx -y veloran@latest`; do not require a global npm install unless the environment does.
 4. Run:
 
    ```bash
-   npx -y veloran@latest init
+   npx -y veloran@latest init --scope project --yes
    ```
 
-5. Keep command output concise. Do not dump file-by-file scaffold logs unless the command fails or the user asks for them.
+   If the user named specific apps, pass them with `--apps`, for example:
+
+   ```bash
+   npx -y veloran@latest init --apps codex,claude,opencode,antigravity --scope project --yes
+   ```
+
+5. Avoid user-global writes unless the user explicitly requested them. Preview first:
+
+   ```bash
+   npx -y veloran@latest init --scope user --apps codex,claude,antigravity --dry-run
+   ```
+
 6. After init succeeds, run:
 
    ```bash
-   npx -y veloran@latest doctor
+   npx -y veloran@latest doctor --apps all --preset harness
    ```
 
-7. If `.agent/prompts/integrate-local-telemetry.md` exists after init, open that file and carry out its instructions in the same repository. Do not stop after printing or locating the prompt if you can continue the setup yourself.
-8. When wiring telemetry or runtime helpers, reuse the repository's real local dev, cluster, or bootstrap path instead of inventing a separate startup flow.
-9. Ask the user only for truly missing information that cannot be inferred safely, such as required credentials, secrets, or the correct local start command when the repository does not make it discoverable.
-10. Finish with a short summary that states:
-    - whether Veloran was initialized successfully
+7. If `init-harness` is available in a generated skill directory, continue by following it. If the current app cannot discover skills, print the prompt:
+
+   ```bash
+   npx -y veloran@latest prompt init-harness
+   ```
+
+8. When wiring the harness, reuse the repository's real local dev, cluster, bootstrap, or test path. Wrap it locally if needed; do not replace production or deployment behavior.
+9. Ask the user only for missing information that cannot be inferred safely, such as required credentials, secrets, external service endpoints, or an undocumented start command.
+10. Finish with a short summary:
+    - whether Veloran initialized successfully
     - whether `doctor` passed
-    - whether telemetry setup was completed
-    - the exact blocker, if anything is still missing
+    - which apps were targeted
+    - whether `init-harness` completed
+    - which prepared secret/config files still need human values
+    - exact blockers, if any
 
 ## Guardrails
 
-- Do not make production or deployment changes just to enable local telemetry.
+- Project scope is the default because files are reviewable and versioned.
+- Do not make production or deployment changes just to enable local observability.
 - Prefer local-only wrappers, local-only environment variables, and reuse of existing startup scripts.
-- Do not use destructive git commands unless the user explicitly asks for them.
+- Do not store secrets in `.agent/memory`, `.agent/context`, plans, docs, prompts, transcripts, or validation logs.
+- Do not use destructive git commands unless the user explicitly asks.
 - Preserve existing user content in managed files when the tool supports it.

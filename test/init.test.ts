@@ -18,20 +18,27 @@ describe("init", () => {
     expect(code).toBe(0);
     expect(fs.existsSync(path.join(root, "AGENTS.md"))).toBe(true);
     expect(fs.existsSync(path.join(root, "CLAUDE.md"))).toBe(true);
+    expect(fs.existsSync(path.join(root, "GEMINI.md"))).toBe(true);
     expect(fs.existsSync(path.join(root, ".codex", "config.toml"))).toBe(true);
     expect(fs.existsSync(path.join(root, ".agent", "harness", "observability", "docker-compose.yml"))).toBe(true);
     expect(fs.existsSync(path.join(root, ".agent", "context", "README.md"))).toBe(true);
+    expect(fs.existsSync(path.join(root, ".agent", "memory", "README.md"))).toBe(true);
     expect(fs.existsSync(path.join(root, ".agent", "prompts", "validate-readiness.md"))).toBe(true);
     expect(fs.existsSync(path.join(root, ".agent", "prompts", "integrate-local-telemetry.md"))).toBe(
       true,
     );
     expect(fs.existsSync(path.join(root, ".agent", "PLANS.md"))).toBe(true);
     expect(fs.existsSync(path.join(root, ".agent", "execplans", "README.md"))).toBe(true);
+    expect(fs.existsSync(path.join(root, ".agent", "veloran-manifest.json"))).toBe(true);
     expect(fs.existsSync(path.join(root, "docs", "LOCAL_TELEMETRY_SETUP.md"))).toBe(true);
+    expect(fs.existsSync(path.join(root, "docs", "HARNESS_SETUP.md"))).toBe(true);
     expect(
       fs.existsSync(
         path.join(root, ".agent", "harness", "observability", "local", "service-topology.example.yaml"),
       ),
+    ).toBe(true);
+    expect(
+      fs.existsSync(path.join(root, ".agents", "skills", "init-harness", "SKILL.md")),
     ).toBe(true);
     expect(
       fs.existsSync(path.join(root, ".agents", "skills", "execplan-create", "SKILL.md")),
@@ -40,16 +47,26 @@ describe("init", () => {
       fs.existsSync(path.join(root, ".agents", "skills", "execplan-execute", "SKILL.md")),
     ).toBe(true);
     expect(
+      fs.existsSync(path.join(root, ".claude", "skills", "init-harness", "SKILL.md")),
+    ).toBe(true);
+    expect(
       fs.existsSync(path.join(root, ".claude", "skills", "execplan-create", "SKILL.md")),
     ).toBe(true);
     expect(
       fs.existsSync(path.join(root, ".claude", "skills", "execplan-execute", "SKILL.md")),
+    ).toBe(true);
+    expect(
+      fs.existsSync(path.join(root, ".agent", "skills", "init-harness", "SKILL.md")),
+    ).toBe(true);
+    expect(
+      fs.existsSync(path.join(root, ".agent", "skills", "execplan-create", "SKILL.md")),
     ).toBe(true);
 
     const agents = readFile(root, "AGENTS.md");
     expect(agents).toContain("<!-- execplans:begin -->");
     expect(agents).toContain("<!-- execplans:end -->");
     expect(agents).toContain(".agent/context/");
+    expect(agents).toContain(".agent/memory/");
     expect(agents).toContain(".agent/prompts/");
 
     const skill = readFile(root, ".agents/skills/execplan-create/SKILL.md");
@@ -61,16 +78,11 @@ describe("init", () => {
 
     expect(io.lines.some((line) => line.startsWith("Create:"))).toBe(false);
     expect(io.lines.some((line) => line.includes("Veloran is ready."))).toBe(true);
-    expect(io.lines.some((line) => line.includes("telemetry prompt:"))).toBe(true);
-    expect(
-      io.lines.some((line) => line.includes(".agent/prompts/integrate-local-telemetry.md")),
-    ).toBe(true);
-    expect(
-      io.lines.some((line) => line.includes("paste it into your coding agent in this repo")),
-    ).toBe(true);
-    expect(io.lines.some((line) => line.includes("wait for it to finish."))).toBe(true);
-    expect(io.lines.some((line) => line.includes("cluster/bootstrap start path"))).toBe(true);
-    expect(io.lines.some((line) => line.includes("npx -y veloran@latest doctor"))).toBe(true);
+    expect(io.lines.some((line) => line.includes("Core skills installed:"))).toBe(true);
+    expect(io.lines.some((line) => line.includes("init-harness"))).toBe(true);
+    expect(io.lines.some((line) => line.includes("prompt init-harness"))).toBe(true);
+    expect(io.lines.some((line) => line.includes("real project start paths"))).toBe(true);
+    expect(io.lines.some((line) => line.includes("doctor --apps"))).toBe(true);
   });
 
   it("supports opting into the minimal standard preset explicitly", async () => {
@@ -116,7 +128,47 @@ describe("init", () => {
     ).toBe(true);
   });
 
-  it("scaffolds a generic AGENTS target without shared skills", async () => {
+  it("scaffolds project-scope apps with Antigravity workspace skills", async () => {
+    const root = createTempWorkspace();
+    initGitMarker(root);
+
+    await runInit({
+      root,
+      preset: "harness",
+      apps: "codex,claude,opencode,antigravity",
+      scope: "project",
+      yes: true,
+    });
+
+    expect(fs.existsSync(path.join(root, "AGENTS.md"))).toBe(true);
+    expect(fs.existsSync(path.join(root, "CLAUDE.md"))).toBe(true);
+    expect(fs.existsSync(path.join(root, "GEMINI.md"))).toBe(true);
+    expect(fs.existsSync(path.join(root, ".codex", "config.toml"))).toBe(true);
+    expect(fs.existsSync(path.join(root, ".claude", "settings.json"))).toBe(true);
+    expect(fs.existsSync(path.join(root, "opencode.json"))).toBe(true);
+    expect(fs.existsSync(path.join(root, ".agent", "skills", "init-harness", "SKILL.md"))).toBe(true);
+    expect(fs.existsSync(path.join(root, ".agents", "skills", "init-harness", "SKILL.md"))).toBe(true);
+    expect(fs.existsSync(path.join(root, ".claude", "skills", "init-harness", "SKILL.md"))).toBe(true);
+    expect(fs.existsSync(path.join(root, ".agent", "memory", "README.md"))).toBe(true);
+    expect(fs.existsSync(path.join(root, "docs", "ANTIGRAVITY_SETUP.md"))).toBe(true);
+  });
+
+  it("filters native app files to selected project apps", async () => {
+    const root = createTempWorkspace();
+    initGitMarker(root);
+
+    await runInit({ root, apps: "antigravity", scope: "project", yes: true });
+
+    expect(fs.existsSync(path.join(root, "AGENTS.md"))).toBe(true);
+    expect(fs.existsSync(path.join(root, "GEMINI.md"))).toBe(true);
+    expect(fs.existsSync(path.join(root, ".agent", "skills", "init-harness", "SKILL.md"))).toBe(true);
+    expect(fs.existsSync(path.join(root, ".codex"))).toBe(false);
+    expect(fs.existsSync(path.join(root, ".claude"))).toBe(false);
+    expect(fs.existsSync(path.join(root, ".opencode"))).toBe(false);
+    expect(fs.existsSync(path.join(root, "opencode.json"))).toBe(false);
+  });
+
+  it("scaffolds a generic AGENTS target with shared core skills", async () => {
     const root = createTempWorkspace();
     initGitMarker(root);
 
@@ -126,10 +178,13 @@ describe("init", () => {
     expect(fs.existsSync(path.join(root, "CLAUDE.md"))).toBe(false);
     expect(
       fs.existsSync(path.join(root, ".agents", "skills", "execplan-create", "SKILL.md")),
-    ).toBe(false);
+    ).toBe(true);
     expect(
       fs.existsSync(path.join(root, ".agents", "skills", "execplan-execute", "SKILL.md")),
-    ).toBe(false);
+    ).toBe(true);
+    expect(
+      fs.existsSync(path.join(root, ".agents", "skills", "init-harness", "SKILL.md")),
+    ).toBe(true);
   });
 
   it("is idempotent on rerun without force", async () => {
@@ -221,6 +276,46 @@ describe("init", () => {
     expect(fs.existsSync(path.join(root, "AGENTS.md"))).toBe(false);
   });
 
+  it("previews user-scope installs without writing into the user home", async () => {
+    const userHome = createTempWorkspace("veloran-home-");
+    const previousHome = process.env.VELORAN_HOME;
+    process.env.VELORAN_HOME = userHome;
+
+    try {
+      const io = captureIo();
+      await runInit(
+        {
+          apps: "codex,claude,antigravity",
+          scope: "user",
+          yes: true,
+          dryRun: true,
+        },
+        io.io,
+      );
+
+      expect(io.lines.some((line) => line.includes("User install home:"))).toBe(true);
+      expect(io.lines.some((line) => line.includes(".codex/skills"))).toBe(true);
+      expect(io.lines.some((line) => line.includes(".claude/skills"))).toBe(true);
+      expect(io.lines.some((line) => line.includes(".gemini/antigravity/skills"))).toBe(true);
+      expect(io.lines.some((line) => line.includes("Planned user-scope manifest"))).toBe(true);
+      expect(fs.existsSync(path.join(userHome, ".codex"))).toBe(false);
+      expect(fs.existsSync(path.join(userHome, ".claude"))).toBe(false);
+      expect(fs.existsSync(path.join(userHome, ".gemini"))).toBe(false);
+    } finally {
+      if (previousHome === undefined) {
+        delete process.env.VELORAN_HOME;
+      } else {
+        process.env.VELORAN_HOME = previousHome;
+      }
+    }
+  });
+
+  it("requires explicit confirmation before real user-scope writes", async () => {
+    await expect(runInit({ apps: "codex", scope: "user" })).rejects.toThrow(
+      "User-scope install requires --yes",
+    );
+  });
+
   it("shows file-by-file actions when verbose is enabled", async () => {
     const root = createTempWorkspace();
     initGitMarker(root);
@@ -252,6 +347,12 @@ describe("init", () => {
       "docs/exec-plans/tech-debt-tracker.md",
       "docs/generated/db-schema.md",
       "docs/generated/observability-validation.md",
+      "docs/generated/harness-validation.md",
+      "docs/HARNESS_SETUP.md",
+      "docs/APP_TARGETS.md",
+      "docs/SKILLS.md",
+      "docs/MEMORY.md",
+      "docs/ANTIGRAVITY_SETUP.md",
       "docs/OBSERVABILITY_RUNBOOK.md",
       "docs/product-specs/index.md",
       "docs/product-specs/new-user-onboarding.md",
@@ -272,6 +373,8 @@ describe("init", () => {
       ".agent/harness/worktree/app-start.sh",
       ".agent/harness/state/.gitkeep",
       ".agent/context/README.md",
+      ".agent/memory/README.md",
+      ".agent/memory/INDEX.md",
       ".agent/context/repo-overview.md",
       ".agent/context/commands.md",
       ".agent/context/testing.md",
@@ -281,6 +384,7 @@ describe("init", () => {
       ".agent/prompts/debugging-handoff.md",
       ".agent/prompts/release-checks.md",
       ".agent/prompts/integrate-local-telemetry.md",
+      ".agent/veloran-manifest.json",
       ".claude/settings.json",
       ".claude/agents/browser-debugger.md",
       ".claude/agents/code-mapper.md",
@@ -288,6 +392,7 @@ describe("init", () => {
       ".claude/agents/reviewer.md",
       ".claude/rules/context-cache.md",
       ".claude/rules/verification.md",
+      ".claude/skills/init-harness/SKILL.md",
       ".claude/skills/ui-legibility/SKILL.md",
       ".codex/agents/browser-debugger.toml",
       ".codex/agents/code-mapper.toml",
@@ -301,6 +406,9 @@ describe("init", () => {
       ".opencode/commands/implementation-plan.md",
       ".opencode/commands/review-changes.md",
       ".opencode/commands/validate-readiness.md",
+      ".agent/skills/init-harness/SKILL.md",
+      ".agent/skills/execplan-create/SKILL.md",
+      ".agent/skills/execplan-execute/SKILL.md",
       ".agent/harness/observability/docker-compose.yml",
       ".agent/harness/observability/fixture/emit-local-telemetry.py",
       ".agent/harness/observability/local/.gitignore",
@@ -316,7 +424,11 @@ describe("init", () => {
       ".agent/harness/mcp/observability-server/package.json",
       ".agent/harness/mcp/observability-server/README.md",
       ".agent/harness/mcp/observability-server/server.mjs",
+      ".agents/skills/init-harness/SKILL.md",
+      ".agents/skills/execplan-create/SKILL.md",
+      ".agents/skills/execplan-execute/SKILL.md",
       ".agents/skills/ui-legibility/SKILL.md",
+      "GEMINI.md",
       "docs/LOCAL_TELEMETRY_SETUP.md",
       "opencode.json",
     ];
@@ -360,6 +472,7 @@ describe("init", () => {
       instructions: string[];
     };
     expect(openCodeConfig.instructions).toContain(".agent/context/*.md");
+    expect(openCodeConfig.instructions).toContain(".agent/memory/*.md");
     expect(openCodeConfig.instructions).toContain(".agent/prompts/*.md");
 
     const openCodeReviewer = readFile(root, ".opencode/agents/reviewer.md");
@@ -376,7 +489,12 @@ describe("init", () => {
 
     const claude = readFile(root, "CLAUDE.md");
     expect(claude).toContain(".agent/context/");
+    expect(claude).toContain(".agent/memory/");
     expect(claude).toContain(".agent/prompts/");
+
+    const gemini = readFile(root, "GEMINI.md");
+    expect(gemini).toContain("init-harness");
+    expect(gemini).toContain(".agent/memory/");
 
     const upStat = fs.statSync(path.join(root, ".agent/harness/worktree/up.sh"));
     expect((upStat.mode & 0o111) !== 0).toBe(true);

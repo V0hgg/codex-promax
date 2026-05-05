@@ -4,8 +4,10 @@ import path from "node:path";
 export type TemplateName =
   | "AGENTS.managed.md"
   | "CLAUDE.managed.md"
+  | "GEMINI.managed.md"
   | "PLANS.md"
   | "execplans_README.md"
+  | "skills/init-harness.SKILL.md"
   | "skills/execplan-create.SKILL.md"
   | "skills/execplan-execute.SKILL.md";
 

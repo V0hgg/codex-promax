@@ -16,19 +16,28 @@ export async function runDoctor(options: CommonOptions, io: DoctorIo = defaultIo
 
   const fixes = runDoctorChecks({
     root: config.root,
+    apps: config.apps,
     preset: config.preset,
     plansFilePath: config.plansFilePath,
     execplansDirPath: config.execplansDirPath,
     agentsFilePath: config.agentsFilePath,
     claudeFilePath: config.claudeFilePath,
+    geminiFilePath: config.geminiFilePath,
     execplanCreateSkillPath: config.execplanCreateSkillPath,
     execplanExecuteSkillPath: config.execplanExecuteSkillPath,
+    initHarnessSkillPath: config.initHarnessSkillPath,
     claudeExecplanCreateSkillPath: config.claudeExecplanCreateSkillPath,
     claudeExecplanExecuteSkillPath: config.claudeExecplanExecuteSkillPath,
-    checkAgentsFile: config.assistants.needsAgentsFile,
-    checkClaudeFile: config.assistants.needsClaudeFile,
-    checkSharedSkills: config.assistants.needsSharedSkills,
-    checkClaudeSkills: config.assistants.needsClaudeSkills,
+    claudeInitHarnessSkillPath: config.claudeInitHarnessSkillPath,
+    antigravityExecplanCreateSkillPath: config.antigravityExecplanCreateSkillPath,
+    antigravityExecplanExecuteSkillPath: config.antigravityExecplanExecuteSkillPath,
+    antigravityInitHarnessSkillPath: config.antigravityInitHarnessSkillPath,
+    checkAgentsFile: config.apps.needsAgentsFile,
+    checkClaudeFile: config.apps.needsClaudeFile,
+    checkGeminiFile: config.apps.needsGeminiFile,
+    checkSharedSkills: config.apps.needsSharedSkills,
+    checkClaudeSkills: config.apps.needsClaudeSkills,
+    checkAntigravitySkills: config.apps.needsAntigravitySkills,
   });
 
   if (fixes.length === 0) {

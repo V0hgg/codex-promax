@@ -99,16 +99,20 @@ verify_docs_structure() {
     "AGENTS.md"
     "ARCHITECTURE.md"
     "CLAUDE.md"
+    "GEMINI.md"
     ".agent/context/README.md"
     ".agent/context/repo-overview.md"
     ".agent/context/commands.md"
     ".agent/context/testing.md"
     ".agent/context/architecture-notes.md"
+    ".agent/memory/README.md"
+    ".agent/memory/INDEX.md"
     ".agent/prompts/onboard-repository.md"
     ".agent/prompts/validate-readiness.md"
     ".agent/prompts/debugging-handoff.md"
     ".agent/prompts/release-checks.md"
     ".agent/prompts/integrate-local-telemetry.md"
+    ".agent/veloran-manifest.json"
     ".claude/settings.json"
     ".claude/agents/browser-debugger.md"
     ".claude/agents/code-mapper.md"
@@ -116,6 +120,9 @@ verify_docs_structure() {
     ".claude/agents/reviewer.md"
     ".claude/rules/context-cache.md"
     ".claude/rules/verification.md"
+    ".claude/skills/init-harness/SKILL.md"
+    ".claude/skills/execplan-create/SKILL.md"
+    ".claude/skills/execplan-execute/SKILL.md"
     ".claude/skills/ui-legibility/SKILL.md"
     ".codex/config.toml"
     ".codex/agents/browser-debugger.toml"
@@ -130,6 +137,12 @@ verify_docs_structure() {
     ".opencode/commands/implementation-plan.md"
     ".opencode/commands/review-changes.md"
     ".opencode/commands/validate-readiness.md"
+    ".agent/skills/init-harness/SKILL.md"
+    ".agent/skills/execplan-create/SKILL.md"
+    ".agent/skills/execplan-execute/SKILL.md"
+    ".agents/skills/init-harness/SKILL.md"
+    ".agents/skills/execplan-create/SKILL.md"
+    ".agents/skills/execplan-execute/SKILL.md"
     ".agents/skills/ui-legibility/SKILL.md"
     ".agent/harness/observability/fixture/emit-local-telemetry.py"
     ".agent/harness/observability/local/.gitignore"
@@ -147,6 +160,12 @@ verify_docs_structure() {
     "docs/exec-plans/tech-debt-tracker.md"
     "docs/generated/db-schema.md"
     "docs/generated/observability-validation.md"
+    "docs/generated/harness-validation.md"
+    "docs/HARNESS_SETUP.md"
+    "docs/APP_TARGETS.md"
+    "docs/SKILLS.md"
+    "docs/MEMORY.md"
+    "docs/ANTIGRAVITY_SETUP.md"
     "docs/LOCAL_TELEMETRY_SETUP.md"
     "docs/OBSERVABILITY_RUNBOOK.md"
     "docs/product-specs/index.md"
@@ -169,9 +188,13 @@ verify_docs_structure() {
   done
 
   grep -q '.agent/context/' "$TARGET_REPO/AGENTS.md" || fail "AGENTS.md missing context cache guidance"
+  grep -q '.agent/memory/' "$TARGET_REPO/AGENTS.md" || fail "AGENTS.md missing memory guidance"
   grep -q '.agent/prompts/' "$TARGET_REPO/AGENTS.md" || fail "AGENTS.md missing prompt guidance"
   grep -q '.agent/context/' "$TARGET_REPO/CLAUDE.md" || fail "CLAUDE.md missing context cache guidance"
+  grep -q '.agent/memory/' "$TARGET_REPO/CLAUDE.md" || fail "CLAUDE.md missing memory guidance"
   grep -q '.agent/prompts/' "$TARGET_REPO/CLAUDE.md" || fail "CLAUDE.md missing prompt guidance"
+  grep -q 'init-harness' "$TARGET_REPO/GEMINI.md" || fail "GEMINI.md missing harness guidance"
+  grep -q '.agent/memory/' "$TARGET_REPO/GEMINI.md" || fail "GEMINI.md missing memory guidance"
   grep -q '\[mcp_servers.chrome_devtools\]' "$TARGET_REPO/.codex/config.toml" || fail "Missing chrome_devtools MCP block"
   grep -q '\[mcp_servers.observability\]' "$TARGET_REPO/.codex/config.toml" || fail "Missing observability MCP block"
   grep -q 'project_doc_fallback_filenames' "$TARGET_REPO/.codex/config.toml" || fail "Missing Codex project doc fallback config"
@@ -196,7 +219,7 @@ tomllib.loads(pathlib.Path(sys.argv[1]).read_text())
 print("codex config: OK")
 PY
 
-  python3 - "$TARGET_REPO/.claude/settings.json" "$TARGET_REPO/.mcp.json" "$TARGET_REPO/opencode.json" <<'PY'
+  python3 - "$TARGET_REPO/.claude/settings.json" "$TARGET_REPO/.mcp.json" "$TARGET_REPO/opencode.json" "$TARGET_REPO/.agent/veloran-manifest.json" <<'PY'
 import json
 import pathlib
 import sys
@@ -217,7 +240,7 @@ instructions = config.get("instructions")
 if not isinstance(instructions, list):
     raise SystemExit("opencode instructions must be a list")
 
-for expected in [".agent/context/*.md", ".agent/prompts/*.md"]:
+for expected in [".agent/context/*.md", ".agent/memory/*.md", ".agent/prompts/*.md"]:
     if expected not in instructions:
         raise SystemExit(f"missing opencode instruction: {expected}")
 
@@ -257,18 +280,42 @@ main() {
   fi
 
   log "Running init + doctor"
-  npx --yes --prefix "$TARGET_REPO" "$PACKAGE_NAME" init --root "$TARGET_REPO" | tee "$INIT_LOG"
+  npx --yes --prefix "$TARGET_REPO" "$PACKAGE_NAME" init \
+    --root "$TARGET_REPO" \
+    --preset harness \
+    --apps codex,claude,opencode,antigravity \
+    --scope project \
+    --yes | tee "$INIT_LOG"
   grep -q 'Veloran is ready\.' "$INIT_LOG" || fail "Init output missing ready summary"
-  grep -q 'telemetry prompt:' "$INIT_LOG" || fail "Init output missing telemetry prompt command heading"
-  grep -q '.agent/prompts/integrate-local-telemetry.md' "$INIT_LOG" || fail "Init output missing saved prompt file path"
-  grep -q 'paste it into your coding agent in this repo' "$INIT_LOG" || fail "Init output missing agent handoff guidance"
-  grep -q 'cluster/bootstrap start path' "$INIT_LOG" || fail "Init output missing cluster-first guidance"
-  grep -q 'npx -y veloran@latest doctor' "$INIT_LOG" || fail "Init output missing npx doctor command"
+  grep -q 'Core skills installed:' "$INIT_LOG" || fail "Init output missing core skills heading"
+  grep -q 'init-harness' "$INIT_LOG" || fail "Init output missing init-harness handoff"
+  grep -q 'prompt init-harness' "$INIT_LOG" || fail "Init output missing harness prompt command"
+  grep -q 'real project start paths' "$INIT_LOG" || fail "Init output missing real start path guidance"
+  grep -q 'doctor --apps codex,claude,opencode,antigravity --preset harness' "$INIT_LOG" || fail "Init output missing scoped doctor command"
   if grep -Eq '^(Create|Skip|Update):' "$INIT_LOG"; then
     fail "Init output should be quiet by default"
   fi
-  npx --yes --prefix "$TARGET_REPO" "$PACKAGE_NAME" init --root "$TARGET_REPO" --verbose | grep -q '^Skip:' || fail "Init --verbose should show file-level actions"
-  npx --yes --prefix "$TARGET_REPO" "$PACKAGE_NAME" doctor --root "$TARGET_REPO"
+  npx --yes --prefix "$TARGET_REPO" "$PACKAGE_NAME" init \
+    --root "$TARGET_REPO" \
+    --preset harness \
+    --apps codex,claude,opencode,antigravity \
+    --scope project \
+    --yes \
+    --verbose | grep -q '^Skip:' || fail "Init --verbose should show file-level actions"
+  npx --yes --prefix "$TARGET_REPO" "$PACKAGE_NAME" doctor \
+    --root "$TARGET_REPO" \
+    --apps codex,claude,opencode,antigravity \
+    --preset harness
+
+  local user_home
+  user_home="$RUN_ROOT/user-home"
+  mkdir -p "$user_home"
+  VELORAN_HOME="$user_home" npx --yes --prefix "$TARGET_REPO" "$PACKAGE_NAME" init \
+    --apps codex,claude,antigravity \
+    --scope user \
+    --yes \
+    --dry-run | grep -q 'Planned user-scope manifest' || fail "User-scope dry-run missing manifest preview"
+  [[ ! -e "$user_home/.codex" ]] || fail "User-scope dry-run wrote Codex global skills"
 
   log "Validating generated docs and MCP config"
   verify_docs_structure
@@ -295,8 +342,12 @@ main() {
   log "Running generated observability smoke script"
   bash "$TARGET_REPO/.agent/harness/observability/smoke.sh"
 
-  log "Checking prompt telemetry CLI output"
-  npx --yes --prefix "$TARGET_REPO" "$PACKAGE_NAME" prompt telemetry | grep -q 'Integrate Local Telemetry Prompt'
+  log "Checking prompt CLI output"
+  npx --yes --prefix "$TARGET_REPO" "$PACKAGE_NAME" prompt telemetry | grep -q 'init-harness'
+  npx --yes --prefix "$TARGET_REPO" "$PACKAGE_NAME" prompt harness | grep -q 'name: init-harness'
+  npx --yes --prefix "$TARGET_REPO" "$PACKAGE_NAME" prompt init-harness | grep -q 'docs/generated/harness-validation.md'
+  npx --yes --prefix "$TARGET_REPO" "$PACKAGE_NAME" prompt plan "E2E Plan" | grep -q 'Create an ExecPlan'
+  npx --yes --prefix "$TARGET_REPO" "$PACKAGE_NAME" prompt exec .agent/execplans/e2e.md | grep -q 'Execute the ExecPlan'
 
   log "Checking prompt install CLI output"
   install_prompt="$(npx --yes --prefix "$TARGET_REPO" "$PACKAGE_NAME" prompt install)"

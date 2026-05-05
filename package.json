@@ -1,7 +1,7 @@
 {
   "name": "veloran",
   "version": "0.2.11",
-  "description": "Scaffold and validate ExecPlan workflows for AI coding assistants",
+  "description": "Scaffold and validate multi-vendor coding-agent harness workflows",
   "license": "MIT",
   "repository": {
     "type": "git",
