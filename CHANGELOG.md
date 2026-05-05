@@ -1,3 +1,12 @@
+## [0.2.16](https://github.com/V0hgg/veloran/compare/v0.2.15...v0.2.16) (2026-05-05)
+
+
+### Features
+
+* add installer menu prompts ([c8037c3](https://github.com/V0hgg/veloran/commit/c8037c3842601a4a26767f83839b28a10ed22063))
+
+
+
 ## [0.2.15](https://github.com/V0hgg/veloran/compare/v0.2.14...v0.2.15) (2026-05-05)
 
 
