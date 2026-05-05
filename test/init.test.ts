@@ -473,6 +473,17 @@ describe("init", () => {
     expect(fs.existsSync(path.join(userHome, ".veloran", "manifest.json"))).toBe(true);
   });
 
+  it("keeps user-scope install output quiet by default", async () => {
+    const userHome = createTempWorkspace();
+    const io = captureIo();
+
+    await runInit({ apps: "codex", scope: "user", yes: true, userHome }, io.io);
+
+    expect(io.lines.some((line) => line.startsWith("Create:"))).toBe(false);
+    expect(io.lines.some((line) => line.includes("Veloran user skills are ready."))).toBe(true);
+    expect(io.lines.some((line) => line.includes("Install home:"))).toBe(true);
+  });
+
   it("requires explicit confirmation before real user-scope writes", async () => {
     await expect(runInit({ apps: "codex", scope: "user" })).rejects.toThrow(
       "User-scope install requires --yes",

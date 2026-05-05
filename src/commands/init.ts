@@ -39,6 +39,47 @@ const defaultIo: InitIo = {
   },
 };
 
+const ansi = {
+  reset: "\x1b[0m",
+  bold: "\x1b[1m",
+  dim: "\x1b[2m",
+  cyan: "\x1b[36m",
+  green: "\x1b[32m",
+  inverse: "\x1b[7m",
+};
+
+function canUseColor(): boolean {
+  return Boolean(
+    process.stdout.isTTY
+    && process.env.NO_COLOR === undefined
+    && process.env.TERM !== "dumb",
+  );
+}
+
+function color(code: string, text: string): string {
+  return canUseColor() ? `${code}${text}${ansi.reset}` : text;
+}
+
+function bold(text: string): string {
+  return color(ansi.bold, text);
+}
+
+function dim(text: string): string {
+  return color(ansi.dim, text);
+}
+
+function cyan(text: string): string {
+  return color(ansi.cyan, text);
+}
+
+function green(text: string): string {
+  return color(ansi.green, text);
+}
+
+function selected(text: string): string {
+  return color(ansi.inverse, text);
+}
+
 function getPackageVersion(): string {
   const packageJsonPath = path.resolve(__dirname, "..", "..", "package.json");
   return JSON.parse(fs.readFileSync(packageJsonPath, "utf8")).version as string;
@@ -60,11 +101,114 @@ function eraseRenderedMenu(lineCount: number): void {
   process.stdout.write(`\x1b[${lineCount}F\x1b[0J`);
 }
 
+interface WizardStep {
+  label: string;
+  title: string;
+  description: string;
+  help: string;
+}
+
+function wizardStep(question: string, multi = false): WizardStep {
+  if (question === "Install Veloran where?") {
+    return {
+      label: "Step 1",
+      title: "Install location",
+      description: "Choose whether Veloran writes project-local files, user-global files, or both.",
+      help: "Use Up/Down or j/k, then Enter.",
+    };
+  }
+
+  if (question === "Which vendor/apps should Veloran support?") {
+    return {
+      label: "Step 2",
+      title: "App targets",
+      description: "Pick the coding agents and harnesses that should discover Veloran skills.",
+      help: multi ? "Use Up/Down or j/k, Space to toggle, then Enter." : "Use Up/Down or j/k, then Enter.",
+    };
+  }
+
+  if (question === "Overwrite existing managed files when needed?") {
+    return {
+      label: "Step 3",
+      title: "Overwrite policy",
+      description: "Keep custom work safe unless you explicitly want generated files refreshed.",
+      help: "Use Up/Down or j/k, then Enter.",
+    };
+  }
+
+  if (question === "User-scope install can affect all repositories for this user. Continue?") {
+    return {
+      label: "Confirm",
+      title: "User-global install",
+      description: "This writes skills and prompts under your selected user install home.",
+      help: "Press Enter to continue, or choose No to cancel.",
+    };
+  }
+
+  return {
+    label: multi ? "Select" : "Choose",
+    title: question,
+    description: "",
+    help: multi ? "Use Up/Down or j/k, Space to toggle, then Enter." : "Use Up/Down or j/k, then Enter.",
+  };
+}
+
+function wizardHeaderLines(step: WizardStep): string[] {
+  const lines = [
+    `${cyan(bold(step.label))} ${bold(step.title)}`,
+  ];
+
+  if (step.description) {
+    lines.push(dim(step.description));
+  }
+
+  lines.push(dim(step.help));
+  lines.push("");
+  return lines;
+}
+
+function renderChoiceLine(choice: Choice, isSelected: boolean, checked?: boolean): string {
+  const marker = isSelected ? ">" : " ";
+  const checkbox = checked === undefined ? "" : `${checked ? "[x]" : "[ ]"} `;
+  const label = `${marker} ${checkbox}${choice.label}`;
+  const hint = choice.hint ? `  ${choice.hint}` : "";
+  return isSelected ? selected(`${label}${hint}`) : `${label}${hint ? dim(hint) : ""}`;
+}
+
+function printInteractiveIntro(): void {
+  if (!canUseTerminalMenu()) {
+    return;
+  }
+
+  const lines = [
+    cyan(bold("Veloran setup")),
+    dim("Multi-app coding-agent harness installer"),
+    dim("Use Enter to accept defaults. Press Ctrl+C to cancel."),
+    "",
+  ];
+
+  process.stdout.write(`${lines.join("\n")}\n`);
+}
+
+function terminalTextQuestion(label: string, defaultValue: string): string {
+  if (!canUseTerminalMenu()) {
+    return `${label} [${defaultValue}]: `;
+  }
+
+  return [
+    `${cyan(bold("Path"))} ${bold(label)}`,
+    dim("Press Enter to use the default."),
+    dim(defaultValue),
+    "> ",
+  ].join("\n");
+}
+
 async function terminalSelect(question: string, choices: Choice[], defaultValue: string): Promise<string> {
   if (!canUseTerminalMenu()) {
     return defaultValue;
   }
 
+  const step = wizardStep(question);
   let selectedIndex = Math.max(
     0,
     choices.findIndex((choice) => choice.value === defaultValue),
@@ -84,13 +228,8 @@ async function terminalSelect(question: string, choices: Choice[], defaultValue:
     const render = (): void => {
       eraseRenderedMenu(renderedLines);
       const lines = [
-        question,
-        "Use arrow keys, then Enter.",
-        ...choices.map((choice, index) => {
-          const marker = index === selectedIndex ? "> " : "  ";
-          const hint = choice.hint ? ` - ${choice.hint}` : "";
-          return `${marker}${choice.label}${hint}`;
-        }),
+        ...wizardHeaderLines(step),
+        ...choices.map((choice, index) => renderChoiceLine(choice, index === selectedIndex)),
       ];
       renderedLines = lines.length;
       output.write(`${lines.join("\n")}\n`);
@@ -119,7 +258,7 @@ async function terminalSelect(question: string, choices: Choice[], defaultValue:
         const selected = choices[selectedIndex];
         cleanup();
         eraseRenderedMenu(renderedLines);
-        output.write(`${question} ${selected.label}\n`);
+        output.write(`${green("[ok]")} ${step.title}: ${selected.label}\n`);
         resolve(selected.value);
       }
     };
@@ -141,6 +280,7 @@ async function terminalMultiSelect(
     return defaultValues;
   }
 
+  const step = wizardStep(question, true);
   let selectedIndex = 0;
   let selectedValues = new Set(defaultValues);
   let renderedLines = 0;
@@ -173,14 +313,10 @@ async function terminalMultiSelect(
     const render = (): void => {
       eraseRenderedMenu(renderedLines);
       const lines = [
-        question,
-        "Use arrow keys, Space to toggle, then Enter.",
-        ...choices.map((choice, index) => {
-          const marker = index === selectedIndex ? "> " : "  ";
-          const checked = selectedValues.has(choice.value) ? "[x]" : "[ ]";
-          const hint = choice.hint ? ` - ${choice.hint}` : "";
-          return `${marker}${checked} ${choice.label}${hint}`;
-        }),
+        ...wizardHeaderLines(step),
+        ...choices.map((choice, index) =>
+          renderChoiceLine(choice, index === selectedIndex, selectedValues.has(choice.value)),
+        ),
       ];
       renderedLines = lines.length;
       output.write(`${lines.join("\n")}\n`);
@@ -219,7 +355,7 @@ async function terminalMultiSelect(
           .filter((choice) => values.includes(choice.value))
           .map((choice) => choice.label)
           .join(", ");
-        output.write(`${question} ${labels}\n`);
+        output.write(`${green("[ok]")} ${step.title}: ${labels}\n`);
         resolve(values);
       }
     };
@@ -322,6 +458,10 @@ async function resolveInteractiveOptions(options: CommonOptions, io: InitIo): Pr
 
   const next: CommonOptions = { ...options };
 
+  if (!io.prompt && !io.select && !io.multiselect) {
+    printInteractiveIntro();
+  }
+
   if (!hasScopeSelection) {
     next.scope = await chooseOne(
       io,
@@ -344,7 +484,7 @@ async function resolveInteractiveOptions(options: CommonOptions, io: InitIo): Pr
     const defaultRoot = resolveRoot(undefined, process.cwd());
     const answer = (await promptLine(
       io,
-      `Install local project harness at which path? [${defaultRoot}]: `,
+      terminalTextQuestion("Local project path", defaultRoot),
     )).trim();
     if (answer.length > 0) {
       next.root = answer;
@@ -355,7 +495,7 @@ async function resolveInteractiveOptions(options: CommonOptions, io: InitIo): Pr
     const defaultHome = process.env.VELORAN_HOME ?? process.env.HOME ?? "~";
     const answer = (await promptLine(
       io,
-      `Install global skills/prompts under which user path? [${defaultHome}]: `,
+      terminalTextQuestion("User install home", defaultHome),
     )).trim();
     if (answer.length > 0) {
       next.userHome = answer;
@@ -434,7 +574,7 @@ function printScopeList(io: InitIo): void {
 
 function printHarnessNextSteps(io: InitIo): void {
   io.log("");
-  io.log("Veloran is ready.");
+  io.log(green(bold("Veloran is ready.")));
   io.log("");
   io.log("Core skills installed:");
   for (const skillName of CORE_SKILL_NAMES) {
@@ -447,6 +587,18 @@ function printHarnessNextSteps(io: InitIo): void {
   io.log("");
   io.log("The init-harness workflow will reuse real project start paths when they are discoverable.");
   io.log("If secrets, database URLs, or service endpoints are missing, it will prepare the config files and ask only for those values.");
+  io.log("Run `veloran --help` for advanced commands.");
+}
+
+function printUserNextSteps(io: InitIo, userHomePath: string): void {
+  io.log("");
+  io.log(green(bold("Veloran user skills are ready.")));
+  io.log(`Install home: ${userHomePath}`);
+  io.log("");
+  io.log("Next step:");
+  io.log("  Open your coding agent and mention @init-harness.");
+  io.log("  Then use @execplan-create and @execplan-execute for planned work.");
+  io.log("");
   io.log("Run `veloran --help` for advanced commands.");
 }
 
@@ -677,7 +829,9 @@ function writeProjectInstall(config: ReturnType<typeof resolveConfig>, actionCon
 }
 
 function writeUserInstall(config: ReturnType<typeof resolveConfig>, actionContext: ActionContext, io: InitIo): void {
-  io.log(`User install home: ${config.userHomePath}`);
+  if (config.dryRun || config.verbose) {
+    io.log(`User install home: ${config.userHomePath}`);
+  }
 
   for (const skillDirectory of userSkillDirectories(config)) {
     writeCoreSkillsToDirectory(skillDirectory, actionContext, config.force);
@@ -760,7 +914,7 @@ export async function runInit(options: CommonOptions, io: InitIo = defaultIo): P
     const userActionContext: ActionContext = {
       dryRun: config.dryRun,
       root: config.userHomePath,
-      log: io.log,
+      log: shouldLogActions ? io.log : () => {},
     };
     writeUserInstall(config, userActionContext, io);
   }
@@ -769,8 +923,7 @@ export async function runInit(options: CommonOptions, io: InitIo = defaultIo): P
     if (scopeIncludesProject(config.installScope)) {
       printHarnessNextSteps(io);
     } else {
-      io.log("");
-      io.log("Veloran user skills are ready.");
+      printUserNextSteps(io, config.userHomePath);
     }
   }
 
