@@ -1,3 +1,12 @@
+## [0.2.13](https://github.com/V0hgg/veloran/compare/v0.2.12...v0.2.13) (2026-05-05)
+
+
+### Features
+
+* add magic installer prompt append flow ([3512f8c](https://github.com/V0hgg/veloran/commit/3512f8ce21c45f0018716ca1ea23020a11ba2b07))
+
+
+
 ## [0.2.12](https://github.com/V0hgg/veloran/compare/v0.2.11...v0.2.12) (2026-05-05)
 
 
