@@ -401,11 +401,11 @@ async function resolveInteractiveOptions(options: CommonOptions, io: InitIo): Pr
       io,
       "User-scope install can affect all repositories for this user. Continue?",
       [
-        { label: "No", value: "no", hint: "cancel before writing user-global files", aliases: ["n"] },
         { label: "Yes", value: "yes", hint: "continue with user-global install", aliases: ["y"] },
+        { label: "No", value: "no", hint: "cancel before writing user-global files", aliases: ["n"] },
       ],
-      "no",
-      "User-scope install can affect all repositories for this user. Continue? y/N: ",
+      "yes",
+      "User-scope install can affect all repositories for this user. Continue? Y/n: ",
     );
     if (answer !== "yes") {
       throw new Error("User-scope install cancelled.");

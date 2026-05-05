@@ -421,6 +421,58 @@ describe("init", () => {
     expect(fs.existsSync(path.join(root, ".claude"))).toBe(false);
   });
 
+  it("defaults user-scope confirmation menus to yes", async () => {
+    const userHome = createTempWorkspace();
+    const selectDefaults = new Map<string, string>();
+    const io = {
+      log() {},
+      async prompt() {
+        throw new Error("Unexpected prompt");
+      },
+      async select(question: string, _choices: unknown[], defaultValue: string) {
+        selectDefaults.set(question, defaultValue);
+        if (question === "Install Veloran where?") {
+          return "user";
+        }
+        if (question === "User-scope install can affect all repositories for this user. Continue?") {
+          return defaultValue;
+        }
+        return "no";
+      },
+      async multiselect() {
+        return ["codex"];
+      },
+    };
+
+    await runInit({ magic: true, userHome }, io);
+
+    expect(selectDefaults.get("User-scope install can affect all repositories for this user. Continue?")).toBe(
+      "yes",
+    );
+    expect(fs.existsSync(path.join(userHome, ".veloran", "manifest.json"))).toBe(true);
+  });
+
+  it("treats empty text confirmation as yes for user-scope installs", async () => {
+    const userHome = createTempWorkspace();
+    const answers = ["global", "codex", "n", ""];
+    const io = {
+      log() {},
+      async prompt() {
+        const answer = answers.shift();
+        if (answer === undefined) {
+          throw new Error("Unexpected prompt");
+        }
+
+        return answer;
+      },
+    };
+
+    await runInit({ magic: true, userHome }, io);
+
+    expect(answers).toEqual([]);
+    expect(fs.existsSync(path.join(userHome, ".veloran", "manifest.json"))).toBe(true);
+  });
+
   it("requires explicit confirmation before real user-scope writes", async () => {
     await expect(runInit({ apps: "codex", scope: "user" })).rejects.toThrow(
       "User-scope install requires --yes",
