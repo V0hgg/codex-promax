@@ -1,3 +1,12 @@
+## [0.2.15](https://github.com/V0hgg/veloran/compare/v0.2.14...v0.2.15) (2026-05-05)
+
+
+### Features
+
+* add hierarchical knowledge support ([9313140](https://github.com/V0hgg/veloran/commit/93131406d6a9cfbc615034d4815f7ac3ca0294ba))
+
+
+
 ## [0.2.14](https://github.com/V0hgg/veloran/compare/v0.2.13...v0.2.14) (2026-05-05)
 
 
