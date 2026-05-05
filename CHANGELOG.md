@@ -1,3 +1,12 @@
+## [0.2.17](https://github.com/V0hgg/veloran/compare/v0.2.16...v0.2.17) (2026-05-05)
+
+
+### Features
+
+* simplify installer completion handoff ([d8ed13a](https://github.com/V0hgg/veloran/commit/d8ed13aa97e299e8ecf0c0acb6faf06221050b2e))
+
+
+
 ## [0.2.16](https://github.com/V0hgg/veloran/compare/v0.2.15...v0.2.16) (2026-05-05)
 
 
