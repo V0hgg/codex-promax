@@ -1,3 +1,13 @@
+## [0.2.11](https://github.com/V0hgg/veloran/compare/v0.2.10...v0.2.11) (2026-05-05)
+
+
+### Features
+
+* rename package to veloran ([0801c40](https://github.com/V0hgg/veloran/commit/0801c406be5b42a9b8ee4ef5961d2ce24dbecae0))
+* simplify agent install onboarding ([97f0090](https://github.com/V0hgg/veloran/commit/97f0090281f990931aad5f80f565bc07613a65c3))
+
+
+
 ## [0.2.10](https://github.com/V0hgg/veloran/compare/v0.2.9...v0.2.10) (2026-04-10)
 
 
