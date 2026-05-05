@@ -1,6 +1,7 @@
 import { spawnSync } from "node:child_process";
 import fs from "node:fs";
 import path from "node:path";
+import readline from "node:readline";
 import { createInterface } from "node:readline/promises";
 
 import { APP_REGISTRY, validAppList } from "../core/apps";
@@ -22,6 +23,15 @@ import { listTemplateFiles, readTemplate } from "../core/templates";
 export interface InitIo {
   log: (line: string) => void;
   prompt?: (question: string) => Promise<string>;
+  select?: (question: string, choices: Choice[], defaultValue: string) => Promise<string>;
+  multiselect?: (question: string, choices: Choice[], defaultValues: string[]) => Promise<string[]>;
+}
+
+interface Choice {
+  label: string;
+  value: string;
+  hint?: string;
+  aliases?: string[];
 }
 
 const defaultIo: InitIo = {
@@ -79,6 +89,194 @@ function getPackageVersion(): string {
   return JSON.parse(fs.readFileSync(packageJsonPath, "utf8")).version as string;
 }
 
+function canUseTerminalMenu(): boolean {
+  return Boolean(
+    process.stdin.isTTY
+    && process.stdout.isTTY
+    && typeof process.stdin.setRawMode === "function",
+  );
+}
+
+function eraseRenderedMenu(lineCount: number): void {
+  if (lineCount === 0) {
+    return;
+  }
+
+  process.stdout.write(`\x1b[${lineCount}F\x1b[0J`);
+}
+
+async function terminalSelect(question: string, choices: Choice[], defaultValue: string): Promise<string> {
+  if (!canUseTerminalMenu()) {
+    return defaultValue;
+  }
+
+  let selectedIndex = Math.max(
+    0,
+    choices.findIndex((choice) => choice.value === defaultValue),
+  );
+  let renderedLines = 0;
+
+  return new Promise((resolve, reject) => {
+    const input = process.stdin;
+    const output = process.stdout;
+
+    const cleanup = (): void => {
+      input.off("keypress", onKeypress);
+      input.setRawMode(false);
+      input.pause();
+    };
+
+    const render = (): void => {
+      eraseRenderedMenu(renderedLines);
+      const lines = [
+        question,
+        "Use arrow keys, then Enter.",
+        ...choices.map((choice, index) => {
+          const marker = index === selectedIndex ? "> " : "  ";
+          const hint = choice.hint ? ` - ${choice.hint}` : "";
+          return `${marker}${choice.label}${hint}`;
+        }),
+      ];
+      renderedLines = lines.length;
+      output.write(`${lines.join("\n")}\n`);
+    };
+
+    const onKeypress = (_value: string, key: readline.Key): void => {
+      if (key.ctrl && key.name === "c") {
+        cleanup();
+        reject(new Error("Interactive install cancelled."));
+        return;
+      }
+
+      if (key.name === "up" || key.name === "k") {
+        selectedIndex = (selectedIndex - 1 + choices.length) % choices.length;
+        render();
+        return;
+      }
+
+      if (key.name === "down" || key.name === "j") {
+        selectedIndex = (selectedIndex + 1) % choices.length;
+        render();
+        return;
+      }
+
+      if (key.name === "return" || key.name === "enter") {
+        const selected = choices[selectedIndex];
+        cleanup();
+        eraseRenderedMenu(renderedLines);
+        output.write(`${question} ${selected.label}\n`);
+        resolve(selected.value);
+      }
+    };
+
+    readline.emitKeypressEvents(input);
+    input.setRawMode(true);
+    input.resume();
+    input.on("keypress", onKeypress);
+    render();
+  });
+}
+
+async function terminalMultiSelect(
+  question: string,
+  choices: Choice[],
+  defaultValues: string[],
+): Promise<string[]> {
+  if (!canUseTerminalMenu()) {
+    return defaultValues;
+  }
+
+  let selectedIndex = 0;
+  let selectedValues = new Set(defaultValues);
+  let renderedLines = 0;
+
+  return new Promise((resolve, reject) => {
+    const input = process.stdin;
+    const output = process.stdout;
+
+    const cleanup = (): void => {
+      input.off("keypress", onKeypress);
+      input.setRawMode(false);
+      input.pause();
+    };
+
+    const toggleCurrent = (): void => {
+      const current = choices[selectedIndex];
+      if (current.value === "all") {
+        selectedValues = selectedValues.has("all") ? new Set() : new Set(["all"]);
+        return;
+      }
+
+      selectedValues.delete("all");
+      if (selectedValues.has(current.value)) {
+        selectedValues.delete(current.value);
+      } else {
+        selectedValues.add(current.value);
+      }
+    };
+
+    const render = (): void => {
+      eraseRenderedMenu(renderedLines);
+      const lines = [
+        question,
+        "Use arrow keys, Space to toggle, then Enter.",
+        ...choices.map((choice, index) => {
+          const marker = index === selectedIndex ? "> " : "  ";
+          const checked = selectedValues.has(choice.value) ? "[x]" : "[ ]";
+          const hint = choice.hint ? ` - ${choice.hint}` : "";
+          return `${marker}${checked} ${choice.label}${hint}`;
+        }),
+      ];
+      renderedLines = lines.length;
+      output.write(`${lines.join("\n")}\n`);
+    };
+
+    const onKeypress = (_value: string, key: readline.Key): void => {
+      if (key.ctrl && key.name === "c") {
+        cleanup();
+        reject(new Error("Interactive install cancelled."));
+        return;
+      }
+
+      if (key.name === "up" || key.name === "k") {
+        selectedIndex = (selectedIndex - 1 + choices.length) % choices.length;
+        render();
+        return;
+      }
+
+      if (key.name === "down" || key.name === "j") {
+        selectedIndex = (selectedIndex + 1) % choices.length;
+        render();
+        return;
+      }
+
+      if (key.name === "space") {
+        toggleCurrent();
+        render();
+        return;
+      }
+
+      if (key.name === "return" || key.name === "enter") {
+        cleanup();
+        eraseRenderedMenu(renderedLines);
+        const values = selectedValues.size === 0 ? ["all"] : Array.from(selectedValues);
+        const labels = choices
+          .filter((choice) => values.includes(choice.value))
+          .map((choice) => choice.label)
+          .join(", ");
+        output.write(`${question} ${labels}\n`);
+        resolve(values);
+      }
+    };
+
+    readline.emitKeypressEvents(input);
+    input.setRawMode(true);
+    input.resume();
+    input.on("keypress", onKeypress);
+    render();
+  });
+}
+
 async function promptLine(io: InitIo, question: string): Promise<string> {
   if (io.prompt) {
     return io.prompt(question);
@@ -100,6 +298,59 @@ function canPrompt(io: InitIo): boolean {
   return Boolean(io.prompt) || Boolean(process.stdin.isTTY && process.stdout.isTTY);
 }
 
+async function chooseOne(
+  io: InitIo,
+  question: string,
+  choices: Choice[],
+  defaultValue: string,
+  fallbackQuestion: string,
+): Promise<string> {
+  if (io.select) {
+    return io.select(question, choices, defaultValue);
+  }
+
+  if (!io.prompt && canUseTerminalMenu()) {
+    return terminalSelect(question, choices, defaultValue);
+  }
+
+  const answer = (await promptLine(io, fallbackQuestion)).trim();
+  if (answer.length === 0) {
+    return defaultValue;
+  }
+
+  const normalized = answer.toLowerCase();
+  const match = choices.find((choice) =>
+    choice.value.toLowerCase() === normalized
+    || choice.label.toLowerCase() === normalized
+    || (choice.aliases ?? []).some((alias) => alias.toLowerCase() === normalized),
+  );
+
+  return match?.value ?? answer;
+}
+
+async function chooseMany(
+  io: InitIo,
+  question: string,
+  choices: Choice[],
+  defaultValues: string[],
+  fallbackQuestion: string,
+): Promise<string[]> {
+  if (io.multiselect) {
+    return io.multiselect(question, choices, defaultValues);
+  }
+
+  if (!io.prompt && canUseTerminalMenu()) {
+    return terminalMultiSelect(question, choices, defaultValues);
+  }
+
+  const answer = (await promptLine(io, fallbackQuestion)).trim();
+  if (answer.length === 0) {
+    return defaultValues;
+  }
+
+  return answer.split(",").map((value) => value.trim()).filter(Boolean);
+}
+
 async function resolveInteractiveOptions(options: CommonOptions, io: InitIo): Promise<CommonOptions> {
   const hasAppSelection = Boolean(options.apps || options.assistants);
   const hasScopeSelection = Boolean(options.scope);
@@ -117,12 +368,17 @@ async function resolveInteractiveOptions(options: CommonOptions, io: InitIo): Pr
   const next: CommonOptions = { ...options };
 
   if (!hasScopeSelection) {
-    const answer = (await promptLine(
+    next.scope = await chooseOne(
       io,
+      "Install Veloran where?",
+      [
+        { label: "Local project", value: "project", hint: "write repository-local harness files", aliases: ["local"] },
+        { label: "Global user", value: "user", hint: "write user-global skills, prompts, and knowledge", aliases: ["global"] },
+        { label: "Both", value: "both", hint: "install project and user-global files" },
+      ],
+      "project",
       "Install Veloran where? local project, global user, or both [local]: ",
-    )).trim();
-    const normalized = answer.toLowerCase();
-    next.scope = normalized === "global" ? "user" : normalized === "local" ? "project" : answer || "project";
+    );
   }
 
   const chosenScope = (next.scope ?? "project").trim().toLowerCase();
@@ -152,25 +408,51 @@ async function resolveInteractiveOptions(options: CommonOptions, io: InitIo): Pr
   }
 
   if (!hasAppSelection) {
-    const answer = (await promptLine(
+    const apps = await chooseMany(
       io,
+      "Which vendor/apps should Veloran support?",
+      [
+        { label: "All supported apps", value: "all", hint: "recommended" },
+        { label: "Generic AGENTS", value: "agents", aliases: ["common"] },
+        { label: "Codex", value: "codex" },
+        { label: "Claude Code", value: "claude" },
+        { label: "OpenCode", value: "opencode" },
+        { label: "Google Antigravity", value: "antigravity" },
+        { label: "Augment", value: "augment" },
+      ],
+      ["all"],
       `Which vendor/apps should Veloran support? ${validAppList()} [all]: `,
-    )).trim();
-    next.apps = answer || "all";
+    );
+    next.apps = apps.includes("all") ? "all" : apps.join(",");
   }
 
   if (next.force === undefined) {
-    const answer = (await promptLine(io, "Overwrite existing managed files when needed? y/N: ")).trim();
-    next.force = /^y(es)?$/i.test(answer);
+    const answer = await chooseOne(
+      io,
+      "Overwrite existing managed files when needed?",
+      [
+        { label: "No", value: "no", hint: "preserve existing files unless managed block update is safe", aliases: ["n"] },
+        { label: "Yes", value: "yes", hint: "overwrite generated templates when needed", aliases: ["y"] },
+      ],
+      "no",
+      "Overwrite existing managed files when needed? y/N: ",
+    );
+    next.force = answer === "yes";
   }
 
   const scope = (next.scope ?? "project").trim().toLowerCase();
   if ((scope === "user" || scope === "both" || scope === "global") && !next.dryRun) {
-    const answer = (await promptLine(
+    const answer = await chooseOne(
       io,
+      "User-scope install can affect all repositories for this user. Continue?",
+      [
+        { label: "No", value: "no", hint: "cancel before writing user-global files", aliases: ["n"] },
+        { label: "Yes", value: "yes", hint: "continue with user-global install", aliases: ["y"] },
+      ],
+      "no",
       "User-scope install can affect all repositories for this user. Continue? y/N: ",
-    )).trim();
-    if (!/^y(es)?$/i.test(answer)) {
+    );
+    if (answer !== "yes") {
       throw new Error("User-scope install cancelled.");
     }
     next.yes = true;

@@ -379,6 +379,46 @@ describe("init", () => {
     expect(fs.existsSync(path.join(root, ".codex"))).toBe(false);
   });
 
+  it("uses menu selectors for magic installer choices when available", async () => {
+    const root = createTempWorkspace();
+    initGitMarker(root);
+    const selectQuestions: string[] = [];
+    const multiselectQuestions: string[] = [];
+    const answers = [root];
+    const io = {
+      log() {},
+      async prompt() {
+        const answer = answers.shift();
+        if (answer === undefined) {
+          throw new Error("Unexpected prompt");
+        }
+
+        return answer;
+      },
+      async select(question: string) {
+        selectQuestions.push(question);
+        return question.includes("Overwrite") ? "no" : "project";
+      },
+      async multiselect(question: string) {
+        multiselectQuestions.push(question);
+        return ["codex", "antigravity"];
+      },
+    };
+
+    await runInit({ magic: true }, io);
+
+    expect(answers).toEqual([]);
+    expect(selectQuestions).toEqual([
+      "Install Veloran where?",
+      "Overwrite existing managed files when needed?",
+    ]);
+    expect(multiselectQuestions).toEqual(["Which vendor/apps should Veloran support?"]);
+    expect(fs.existsSync(path.join(root, "AGENTS.md"))).toBe(true);
+    expect(fs.existsSync(path.join(root, "GEMINI.md"))).toBe(true);
+    expect(fs.existsSync(path.join(root, ".codex", "config.toml"))).toBe(true);
+    expect(fs.existsSync(path.join(root, ".claude"))).toBe(false);
+  });
+
   it("requires explicit confirmation before real user-scope writes", async () => {
     await expect(runInit({ apps: "codex", scope: "user" })).rejects.toThrow(
       "User-scope install requires --yes",
