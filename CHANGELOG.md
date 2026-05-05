@@ -1,3 +1,12 @@
+## [0.2.12](https://github.com/V0hgg/veloran/compare/v0.2.11...v0.2.12) (2026-05-05)
+
+
+### Features
+
+* add multi-vendor harness installer ([a82f383](https://github.com/V0hgg/veloran/commit/a82f383a4912d1404226fb60077b324b7d2672b3))
+
+
+
 ## [0.2.11](https://github.com/V0hgg/veloran/compare/v0.2.10...v0.2.11) (2026-05-05)
 
 
