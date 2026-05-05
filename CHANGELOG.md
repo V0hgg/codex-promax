@@ -1,3 +1,12 @@
+## [0.2.19](https://github.com/V0hgg/veloran/compare/v0.2.18...v0.2.19) (2026-05-05)
+
+
+### Bug Fixes
+
+* default user install confirmation to yes ([043320a](https://github.com/V0hgg/veloran/commit/043320aba122902647d6bad8c4612c62e2e50301))
+
+
+
 ## [0.2.18](https://github.com/V0hgg/veloran/compare/v0.2.17...v0.2.18) (2026-05-05)
 
 
