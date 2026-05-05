@@ -3,6 +3,9 @@
   "instructions": [
     ".agent/context/*.md",
     ".agent/memory/*.md",
-    ".agent/prompts/*.md"
+    ".agent/prompts/*.md",
+    ".agent/knowledge/INDEX.md",
+    ".agent/knowledge/rules/*.md",
+    ".agent/knowledge/standards/*.md"
   ]
 }

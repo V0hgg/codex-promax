@@ -23,6 +23,13 @@ describe("init", () => {
     expect(fs.existsSync(path.join(root, ".agent", "harness", "observability", "docker-compose.yml"))).toBe(true);
     expect(fs.existsSync(path.join(root, ".agent", "context", "README.md"))).toBe(true);
     expect(fs.existsSync(path.join(root, ".agent", "memory", "README.md"))).toBe(true);
+    expect(fs.existsSync(path.join(root, ".agent", "knowledge", "INDEX.md"))).toBe(true);
+    expect(fs.existsSync(path.join(root, ".agent", "knowledge", "rules", "coding-agent-workflow.md"))).toBe(
+      true,
+    );
+    expect(fs.existsSync(path.join(root, ".agent", "knowledge", "standards", "validation.md"))).toBe(
+      true,
+    );
     expect(fs.existsSync(path.join(root, ".agent", "prompts", "validate-readiness.md"))).toBe(true);
     expect(fs.existsSync(path.join(root, ".agent", "prompts", "integrate-local-telemetry.md"))).toBe(
       true,
@@ -67,6 +74,7 @@ describe("init", () => {
     expect(agents).toContain("<!-- execplans:end -->");
     expect(agents).toContain(".agent/context/");
     expect(agents).toContain(".agent/memory/");
+    expect(agents).toContain(".agent/knowledge/");
     expect(agents).toContain(".agent/prompts/");
 
     const skill = readFile(root, ".agents/skills/execplan-create/SKILL.md");
@@ -326,6 +334,10 @@ describe("init", () => {
     expect(first).toContain("Keep this.");
     expect(first).toContain("<!-- execplans:begin -->");
     expect(first).toContain("<!-- execplans:end -->");
+    expect(fs.existsSync(path.join(userHome, ".veloran", "knowledge", "INDEX.md"))).toBe(true);
+    expect(
+      fs.existsSync(path.join(userHome, ".veloran", "knowledge", "rules", "personal-agent-defaults.md")),
+    ).toBe(true);
 
     await runInit({
       apps: "agents",
@@ -432,6 +444,14 @@ describe("init", () => {
       ".agent/context/README.md",
       ".agent/memory/README.md",
       ".agent/memory/INDEX.md",
+      ".agent/knowledge/INDEX.md",
+      ".agent/knowledge/README.md",
+      ".agent/knowledge/rules/coding-agent-workflow.md",
+      ".agent/knowledge/rules/safety-and-secrets.md",
+      ".agent/knowledge/standards/validation.md",
+      ".agent/knowledge/standards/documentation.md",
+      ".agent/knowledge/facts/README.md",
+      ".agent/knowledge/docs/README.md",
       ".agent/context/repo-overview.md",
       ".agent/context/commands.md",
       ".agent/context/testing.md",
@@ -531,6 +551,9 @@ describe("init", () => {
     expect(openCodeConfig.instructions).toContain(".agent/context/*.md");
     expect(openCodeConfig.instructions).toContain(".agent/memory/*.md");
     expect(openCodeConfig.instructions).toContain(".agent/prompts/*.md");
+    expect(openCodeConfig.instructions).toContain(".agent/knowledge/INDEX.md");
+    expect(openCodeConfig.instructions).toContain(".agent/knowledge/rules/*.md");
+    expect(openCodeConfig.instructions).toContain(".agent/knowledge/standards/*.md");
 
     const openCodeReviewer = readFile(root, ".opencode/agents/reviewer.md");
     expect(openCodeReviewer).toContain("description: Review changes for correctness");
@@ -547,11 +570,13 @@ describe("init", () => {
     const claude = readFile(root, "CLAUDE.md");
     expect(claude).toContain(".agent/context/");
     expect(claude).toContain(".agent/memory/");
+    expect(claude).toContain(".agent/knowledge/");
     expect(claude).toContain(".agent/prompts/");
 
     const gemini = readFile(root, "GEMINI.md");
     expect(gemini).toContain("init-harness");
     expect(gemini).toContain(".agent/memory/");
+    expect(gemini).toContain(".agent/knowledge/");
 
     const upStat = fs.statSync(path.join(root, ".agent/harness/worktree/up.sh"));
     expect((upStat.mode & 0o111) !== 0).toBe(true);

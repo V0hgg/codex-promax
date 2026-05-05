@@ -12,3 +12,5 @@ Veloran supports these app IDs through `--apps`:
 - `all`: every supported target.
 
 `--assistants` remains a compatibility alias for `--apps`.
+
+Harness installs also create Veloran knowledge indexes. Project installs write `.agent/knowledge/`; user installs write `.veloran/knowledge/` under the chosen user home. App prompt files point agents at the index so rules, standards, facts, and docs can be loaded selectively instead of copied into every prompt.

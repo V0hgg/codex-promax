@@ -13,7 +13,10 @@ Leave the repository with a complete local harness. The user should not need to 
 
 ## Workflow
 
-1. Read the root instructions first: `AGENTS.md`, `CLAUDE.md`, `GEMINI.md`, `.agent/context/`, `.agent/memory/`, and relevant docs. Use `.agent/memory/` to avoid repeating previously confirmed discovery.
+1. Read the root instructions first: `AGENTS.md`, `CLAUDE.md`, `GEMINI.md`, `.agent/knowledge/INDEX.md`, `.agent/context/`, `.agent/memory/`, and relevant docs. Use Veloran knowledge and memory to avoid repeating previously confirmed discovery.
+   - Compose knowledge from broad to specific: user-global `~/.veloran/knowledge/`, repository `.agent/knowledge/`, then nested path `.agent/knowledge/` directories.
+   - Load only rules, standards, facts, and docs that match the current repository shape or touched paths.
+   - Use `veloran knowledge print --path <repo-or-subdir> --touched <file>` when the applicable knowledge set is unclear.
 2. Define success before editing. State the concrete harness outputs you will create and the checks that prove them.
 3. Detect the repository shape: monolith, frontend app, backend API, full-stack app, worker, CLI, library, or microservice graph.
 4. Find the real local start path by inspecting package scripts, Makefiles, compose files, dev scripts, process managers, README setup, tests, and existing cluster or worktree scripts.
@@ -31,7 +34,7 @@ Leave the repository with a complete local harness. The user should not need to 
 10. Wire traces through local OpenTelemetry endpoints or documented framework-specific adapters. Keep production tracing defaults unchanged.
 11. Wire browser or UI checks for frontend and full-stack apps when a browser MCP, Playwright setup, or local browser harness is available.
 12. Prepare MCP setup for local observability if the scaffold exists under `.agent/harness/mcp/observability-server/`.
-13. Record durable, verified discoveries in `.agent/memory/`. Keep memory short, dated, evidence-based, and secret-free.
+13. Record durable, verified discoveries in `.agent/knowledge/facts/` or `.agent/memory/` as appropriate. Default repository-specific commands, services, ports, tests, and harness facts to local `.agent/knowledge/`; use user-global knowledge only with explicit user approval or repeated cross-repository evidence. Keep entries short, dated, evidence-based, and secret-free.
 14. Write validation evidence to `docs/generated/harness-validation.md`.
 15. Run the narrowest meaningful checks first, then broaden. Fix failures you introduced.
 16. Finish with exact commands run, observed evidence, files the user must fill in, and any evidence-backed blockers.
@@ -52,7 +55,7 @@ For CLIs and libraries, create validation commands, fixture data, and a minimal 
 
 ## Memory Rules
 
-Use `.agent/memory/` only for durable project knowledge that prevents repeat rediscovery. Include the date, source file or command evidence, and a short conclusion. Never write secrets, tokens, passwords, private keys, customer data, or raw production logs into memory.
+Use `.agent/knowledge/` for rules, standards, facts, and docs that should be inspectable by kind and path. Use `.agent/memory/` for short durable project knowledge when the existing repo convention expects memory. Include the date, source file or command evidence, and a short conclusion. Never write secrets, tokens, passwords, private keys, customer data, or raw production logs into knowledge or memory.
 
 ## Coding Rules
 

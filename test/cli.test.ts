@@ -76,4 +76,42 @@ describe("cli", () => {
     expect(fs.existsSync(path.join(cwd, ".agent", "veloran-manifest.json"))).toBe(false);
     expect(fs.existsSync(path.join(installRoot, ".codex"))).toBe(false);
   });
+
+  it("prints the ordered knowledge bundle through the CLI", async () => {
+    const projectRoot = createTempWorkspace("veloran-cli-knowledge-");
+    const userHome = createTempWorkspace("veloran-cli-user-");
+    initGitMarker(projectRoot);
+
+    process.chdir(projectRoot);
+    await createProgram("0.0.0").parseAsync([
+      "node",
+      "veloran",
+      "init",
+      "--scope",
+      "project",
+      "--apps",
+      "agents",
+      "--user-home",
+      userHome,
+      "--yes",
+    ]);
+
+    await createProgram("0.0.0").parseAsync([
+      "node",
+      "veloran",
+      "knowledge",
+      "print",
+      "--path",
+      projectRoot,
+      "--apps",
+      "agents",
+      "--user-home",
+      userHome,
+    ]);
+
+    const output = logSpy.mock.calls.map((call) => String(call[0])).join("\n");
+    expect(output).toContain("# Veloran Knowledge Bundle");
+    expect(output).toContain("veloran.rules.coding-agent-workflow");
+    expect(output).toContain(".agent/knowledge/rules/coding-agent-workflow.md");
+  });
 });

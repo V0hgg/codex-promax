@@ -23,6 +23,8 @@ export async function runDoctor(options: CommonOptions, io: DoctorIo = defaultIo
     agentsFilePath: config.agentsFilePath,
     claudeFilePath: config.claudeFilePath,
     geminiFilePath: config.geminiFilePath,
+    projectKnowledgeDirPath: config.projectKnowledgeDirPath,
+    knowledgeEnabled: config.knowledgeEnabled,
     execplanCreateSkillPath: config.execplanCreateSkillPath,
     execplanExecuteSkillPath: config.execplanExecuteSkillPath,
     initHarnessSkillPath: config.initHarnessSkillPath,

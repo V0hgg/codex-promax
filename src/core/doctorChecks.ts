@@ -5,6 +5,7 @@ import YAML from "yaml";
 
 import { AppTargets } from "./apps";
 import { selectedAppAdapters } from "./appAdapters";
+import { validateKnowledgeTree } from "./knowledge";
 import { MANAGED_BEGIN, MANAGED_END } from "./managedBlock";
 import { InitPreset } from "./presets";
 
@@ -63,6 +64,17 @@ const HARNESS_COMMON_REQUIRED_RELATIVE_PATHS = [
   "docs/LOCAL_TELEMETRY_SETUP.md",
 ];
 
+const HARNESS_KNOWLEDGE_REQUIRED_RELATIVE_PATHS = [
+  ".agent/knowledge/INDEX.md",
+  ".agent/knowledge/README.md",
+  ".agent/knowledge/rules/coding-agent-workflow.md",
+  ".agent/knowledge/rules/safety-and-secrets.md",
+  ".agent/knowledge/standards/validation.md",
+  ".agent/knowledge/standards/documentation.md",
+  ".agent/knowledge/facts/README.md",
+  ".agent/knowledge/docs/README.md",
+];
+
 function hasTomlField(content: string, fieldName: string): boolean {
   const pattern = new RegExp(`^${fieldName}\\s*=`, "m");
   return pattern.test(content);
@@ -116,6 +128,8 @@ export interface DoctorCheckOptions {
   agentsFilePath: string;
   claudeFilePath: string;
   geminiFilePath: string;
+  projectKnowledgeDirPath: string;
+  knowledgeEnabled: boolean;
   execplanCreateSkillPath: string;
   execplanExecuteSkillPath: string;
   initHarnessSkillPath: string;
@@ -254,6 +268,17 @@ export function runDoctorChecks(options: DoctorCheckOptions): string[] {
       if (!fs.existsSync(absolutePath)) {
         fixes.push(`Fix: Create ${absolutePath} (run \`veloran init --preset harness\`).`);
       }
+    }
+
+    if (options.knowledgeEnabled) {
+      for (const relativePath of HARNESS_KNOWLEDGE_REQUIRED_RELATIVE_PATHS) {
+        const absolutePath = path.resolve(options.root, relativePath);
+        if (!fs.existsSync(absolutePath)) {
+          fixes.push(`Fix: Create ${absolutePath} (run \`veloran init --preset harness\`).`);
+        }
+      }
+
+      fixes.push(...validateKnowledgeTree(options.projectKnowledgeDirPath));
     }
 
     for (const adapter of selectedAppAdapters(options.apps.values)) {
@@ -453,7 +478,14 @@ export function runDoctorChecks(options: DoctorCheckOptions): string[] {
         );
       } else {
         const instructions = openCodeConfig.instructions.filter((value): value is string => typeof value === "string");
-        for (const expectedInstruction of [".agent/context/*.md", ".agent/memory/*.md", ".agent/prompts/*.md"]) {
+        for (const expectedInstruction of [
+          ".agent/context/*.md",
+          ".agent/memory/*.md",
+          ".agent/prompts/*.md",
+          ".agent/knowledge/INDEX.md",
+          ".agent/knowledge/rules/*.md",
+          ".agent/knowledge/standards/*.md",
+        ]) {
           if (!instructions.includes(expectedInstruction)) {
             fixes.push(
               `Fix: Add "${expectedInstruction}" to ${openCodeConfigPath} instructions (or rerun \`veloran init\`).`,

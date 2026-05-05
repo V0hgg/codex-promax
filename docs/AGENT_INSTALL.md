@@ -37,15 +37,23 @@ Set up a project-local Veloran harness by default, validate it, and then continu
    npx -y veloran@latest doctor --apps all --preset harness
    ```
 
-7. If `init-harness` is available in a generated skill directory, continue by following it. If the current app cannot discover skills, print the prompt:
+7. Inspect the active knowledge bundle when repository behavior is unclear:
+
+   ```bash
+   npx -y veloran@latest knowledge print --path . --apps all
+   ```
+
+   Use `--touched <file>` to narrow path-specific rules and standards.
+
+8. If `init-harness` is available in a generated skill directory, continue by following it. If the current app cannot discover skills, print the prompt:
 
    ```bash
    npx -y veloran@latest prompt init-harness
    ```
 
-8. When wiring the harness, reuse the repository's real local dev, cluster, bootstrap, or test path. Wrap it locally if needed; do not replace production or deployment behavior.
-9. Ask the user only for missing information that cannot be inferred safely, such as required credentials, secrets, external service endpoints, or an undocumented start command.
-10. Finish with a short summary:
+9. When wiring the harness, reuse the repository's real local dev, cluster, bootstrap, or test path. Wrap it locally if needed; do not replace production or deployment behavior.
+10. Ask the user only for missing information that cannot be inferred safely, such as required credentials, secrets, external service endpoints, or an undocumented start command.
+11. Finish with a short summary:
     - whether Veloran initialized successfully
     - whether `doctor` passed
     - which apps were targeted
@@ -56,8 +64,9 @@ Set up a project-local Veloran harness by default, validate it, and then continu
 ## Guardrails
 
 - Project scope is the default because files are reviewable and versioned.
+- Default new rules, standards, facts, and docs to project-local `.agent/knowledge/`. Promote to user-global `.veloran/knowledge/` only when the user approves it or repeated cross-repository evidence proves it is reusable.
 - Do not make production or deployment changes just to enable local observability.
 - Prefer local-only wrappers, local-only environment variables, and reuse of existing startup scripts.
-- Do not store secrets in `.agent/memory`, `.agent/context`, plans, docs, prompts, transcripts, or validation logs.
+- Do not store secrets in `.agent/knowledge`, `.agent/memory`, `.agent/context`, plans, docs, prompts, transcripts, or validation logs.
 - Do not use destructive git commands unless the user explicitly asks.
 - Preserve existing user content in managed files when the tool supports it.

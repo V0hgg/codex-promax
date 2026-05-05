@@ -6,6 +6,7 @@ import path from "node:path";
 
 import { runDoctor } from "./commands/doctor";
 import { runInit } from "./commands/init";
+import { runKnowledgeDoctor, runKnowledgePrint } from "./commands/knowledge";
 import {
   runPromptExec,
   runPromptHarness,
@@ -43,6 +44,10 @@ interface CommonCliOptions {
   userAgentsFile?: string;
   userClaudeFile?: string;
   userGeminiFile?: string;
+  knowledgeDir?: string;
+  userKnowledgeDir?: string;
+  knowledge?: boolean;
+  noKnowledge?: boolean;
   force?: boolean;
   dryRun?: boolean;
 }
@@ -109,8 +114,17 @@ function addCommonOptions(command: Command): Command {
     .addOption(
       new Option("--user-gemini-file <path>", "user-scope Gemini/Antigravity prompt file to append").default(".veloran/prompts/GEMINI.md"),
     )
+    .addOption(new Option("--knowledge-dir <path>", "project knowledge directory").default(".agent/knowledge"))
+    .addOption(
+      new Option("--user-knowledge-dir <path>", "user-scope knowledge directory").default(".veloran/knowledge"),
+    )
+    .addOption(new Option("--no-knowledge", "skip Veloran knowledge scaffold and validation"))
     .addOption(new Option("--force", "overwrite managed templates and blocks").default(false))
     .addOption(new Option("--dry-run", "show planned changes without writing files").default(false));
+}
+
+function collectRepeated(value: string, previous: string[] | undefined): string[] {
+  return [...(previous ?? []), value];
 }
 
 export function createProgram(packageVersion: string): Command {
@@ -215,6 +229,33 @@ export function createProgram(packageVersion: string): Command {
   );
   doctor.action(async (options: CommonCliOptions) => {
     const code = await runDoctor(options);
+    process.exitCode = code;
+  });
+
+  const knowledge = program.command("knowledge").description("inspect and validate Veloran knowledge");
+
+  const knowledgePrint = addCommonOptions(
+    knowledge
+      .command("print")
+      .addOption(
+        new Option("--touched <path>", "task-touched path used for appliesTo filtering")
+          .argParser(collectRepeated),
+      )
+      .addOption(new Option("--include-draft", "include draft knowledge entries").default(false))
+      .description("print the ordered Veloran knowledge bundle for a path"),
+  );
+  knowledgePrint.action(async (options: CommonCliOptions & { touched?: string[]; includeDraft?: boolean }) => {
+    const code = await runKnowledgePrint(options);
+    process.exitCode = code;
+  });
+
+  const knowledgeDoctor = addCommonOptions(
+    knowledge
+      .command("doctor")
+      .description("validate Veloran knowledge trees and frontmatter"),
+  );
+  knowledgeDoctor.action(async (options: CommonCliOptions) => {
+    const code = await runKnowledgeDoctor(options);
     process.exitCode = code;
   });
 

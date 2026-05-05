@@ -35,6 +35,10 @@ export interface CommonOptions {
   userAgentsFile?: string;
   userClaudeFile?: string;
   userGeminiFile?: string;
+  knowledgeDir?: string;
+  userKnowledgeDir?: string;
+  knowledge?: boolean;
+  noKnowledge?: boolean;
   force?: boolean;
   dryRun?: boolean;
   verbose?: boolean;
@@ -51,6 +55,9 @@ export interface ResolvedConfig {
   userAgentsFilePath: string;
   userClaudeFilePath: string;
   userGeminiFilePath: string;
+  projectKnowledgeDirPath: string;
+  userKnowledgeDirPath: string;
+  knowledgeEnabled: boolean;
   agentsFilePath: string;
   claudeFilePath: string;
   geminiFilePath: string;
@@ -151,6 +158,11 @@ export function resolveConfig(options: CommonOptions, cwd: string = process.cwd(
     userHomePath,
     options.userGeminiFile ?? ".veloran/prompts/GEMINI.md",
   );
+  const projectKnowledgeDirPath = resolvePath(root, options.knowledgeDir ?? ".agent/knowledge");
+  const userKnowledgeDirPath = resolveUserPath(
+    userHomePath,
+    options.userKnowledgeDir ?? ".veloran/knowledge",
+  );
 
   const execplanCreateSkillPath = path.join(skillsDirPath, "execplan-create", "SKILL.md");
   const execplanExecuteSkillPath = path.join(skillsDirPath, "execplan-execute", "SKILL.md");
@@ -193,6 +205,9 @@ export function resolveConfig(options: CommonOptions, cwd: string = process.cwd(
     userAgentsFilePath,
     userClaudeFilePath,
     userGeminiFilePath,
+    projectKnowledgeDirPath,
+    userKnowledgeDirPath,
+    knowledgeEnabled: options.knowledge !== false && !options.noKnowledge,
     agentsFilePath,
     claudeFilePath,
     geminiFilePath,

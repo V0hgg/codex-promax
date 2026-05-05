@@ -313,6 +313,32 @@ function writeCoreSkillsToDirectory(
   }
 }
 
+function buildKnowledgeTemplateEntries(
+  config: ReturnType<typeof resolveConfig>,
+  scope: "project" | "user",
+): TemplateCopyEntry[] {
+  const templateRoot = `knowledge/${scope}`;
+  const templatePrefix = `${templateRoot}/`;
+  const destinationRoot =
+    scope === "project" ? config.projectKnowledgeDirPath : config.userKnowledgeDirPath;
+
+  return listTemplateFiles(templateRoot).map((templateRelativePath) => {
+    if (!templateRelativePath.startsWith(templatePrefix)) {
+      throw new Error(
+        `Knowledge template path "${templateRelativePath}" is outside "${templatePrefix}".`,
+      );
+    }
+
+    return {
+      templateRelativePath,
+      destinationAbsolutePath: path.join(
+        destinationRoot,
+        templateRelativePath.slice(templatePrefix.length),
+      ),
+    };
+  });
+}
+
 function uniquePaths(paths: string[]): string[] {
   return Array.from(new Set(paths));
 }
@@ -375,6 +401,7 @@ function buildManifest(config: ReturnType<typeof resolveConfig>, scope: "project
         "execplans",
         "context",
         "memory",
+        "knowledge",
         "harness",
         "docs",
         "mcp-config",
@@ -434,6 +461,10 @@ function writeProjectInstall(config: ReturnType<typeof resolveConfig>, actionCon
     writeCoreSkillsToDirectory(skillDirectory, actionContext, config.force);
   }
 
+  if (config.knowledgeEnabled && config.preset === "harness") {
+    applyTemplateEntries(buildKnowledgeTemplateEntries(config, "project"), actionContext, config.force);
+  }
+
   writeIfMissingOrForce(
     config.manifestPath,
     buildManifest(config, "project"),
@@ -474,6 +505,10 @@ function writeUserInstall(config: ReturnType<typeof resolveConfig>, actionContex
       actionContext,
       false,
     );
+  }
+
+  if (config.knowledgeEnabled && config.preset === "harness") {
+    applyTemplateEntries(buildKnowledgeTemplateEntries(config, "user"), actionContext, config.force);
   }
 
   const manifest = buildManifest(config, "user");

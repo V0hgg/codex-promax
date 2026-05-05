@@ -37,3 +37,5 @@ Veloran can prepare files for multiple coding-agent apps.
 - Antigravity MCP setup notes in `docs/ANTIGRAVITY_SETUP.md`
 
 User-scope installs can place skills under user-global directories, but project-scope installs are the safest default because they are reviewable and versioned with the repository.
+
+Harness installs also create Veloran knowledge indexes. Project installs write `.agent/knowledge/`; user installs write `.veloran/knowledge/` under the chosen user home. App prompt files point agents at the index so rules, standards, facts, and docs can be loaded selectively instead of copied into every prompt.

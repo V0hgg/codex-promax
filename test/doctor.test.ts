@@ -157,6 +157,28 @@ describe("doctor", () => {
     );
   });
 
+  it("validates knowledge frontmatter for harness installs", async () => {
+    const root = createTempWorkspace();
+    initGitMarker(root);
+
+    await runInit({ root });
+
+    const knowledgePath = path.join(root, ".agent", "knowledge", "rules", "coding-agent-workflow.md");
+    const broken = readFile(root, ".agent/knowledge/rules/coding-agent-workflow.md")
+      .replace("kind: rule", "kind: nope")
+      .replace("lastVerified: 2026-05-05", "lastVerified: yesterday");
+    fs.writeFileSync(knowledgePath, broken, "utf8");
+
+    const io = captureIo();
+    const code = await runDoctor({ root }, io.io);
+
+    expect(code).toBe(1);
+    expect(io.lines.some((line) => line.includes(knowledgePath) && line.includes('"kind"'))).toBe(true);
+    expect(io.lines.some((line) => line.includes(knowledgePath) && line.includes("lastVerified"))).toBe(
+      true,
+    );
+  });
+
   it("prints codex-max specific Fix messages when preset artifacts are missing", async () => {
     const root = createTempWorkspace();
     initGitMarker(root);
@@ -169,6 +191,7 @@ describe("doctor", () => {
     fs.unlinkSync(path.join(root, ".agent/harness/observability/smoke.sh"));
     fs.unlinkSync(path.join(root, ".agent/harness/observability/local/service-topology.example.yaml"));
     fs.unlinkSync(path.join(root, ".agent/harness/observability/runtime/.gitignore"));
+    fs.unlinkSync(path.join(root, ".agent/knowledge/INDEX.md"));
     fs.unlinkSync(path.join(root, "docs/LOCAL_TELEMETRY_SETUP.md"));
     fs.unlinkSync(path.join(root, ".codex", "agents", "reviewer.toml"));
     writeFile(root, ".codex/config.toml", "[mcp_servers.chrome_devtools]\ncommand = \"npx\"\n");
@@ -193,6 +216,7 @@ describe("doctor", () => {
     expect(io.lines.some((line) => line.includes(".agent/harness/observability/runtime/.gitignore"))).toBe(
       true,
     );
+    expect(io.lines.some((line) => line.includes(".agent/knowledge/INDEX.md"))).toBe(true);
     expect(io.lines.some((line) => line.includes("docs/LOCAL_TELEMETRY_SETUP.md"))).toBe(true);
     expect(io.lines.some((line) => line.includes(".codex/agents/reviewer.toml"))).toBe(true);
     expect(io.lines.some((line) => line.includes("project_doc_fallback_filenames"))).toBe(true);

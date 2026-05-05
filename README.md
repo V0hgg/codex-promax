@@ -57,12 +57,13 @@ Project scope is the default and writes reviewable files inside the target repos
 - `.agent/PLANS.md` and `.agent/execplans/`
 - `.agent/context/` for curated onboarding notes
 - `.agent/memory/` for durable, verified project facts
+- `.agent/knowledge/` for indexed rules, standards, facts, and docs composed with user-global knowledge
 - `.agent/harness/` for startup, observability, MCP, and runtime helper scaffolding
 - app-native config for Codex, Claude Code, OpenCode, and Antigravity setup notes
 - docs for harness setup, app targets, skills, memory, and validation
 - `.agent/veloran-manifest.json` recording the selected apps, scope, preset, and package version
 
-User scope writes user-global skills and appends Veloran managed prompt blocks to user prompt files under the chosen user path. It does not overwrite the user's existing prompt text. Real user-scope writes require `--yes` or interactive confirmation. Use `--dry-run` first.
+User scope writes user-global skills, user-global knowledge under `.veloran/knowledge/`, and appends Veloran managed prompt blocks to user prompt files under the chosen user path. It does not overwrite the user's existing prompt text. Real user-scope writes require `--yes` or interactive confirmation. Use `--dry-run` first.
 
 ## Core Skills
 
@@ -125,6 +126,9 @@ npx -y veloran@latest init --verbose
 npx -y veloran@latest init --force
 npx -y veloran@latest init --list-apps
 npx -y veloran@latest init --list-scopes
+npx -y veloran@latest knowledge print --path . --apps all
+npx -y veloran@latest knowledge print --path . --touched src/index.ts
+npx -y veloran@latest knowledge doctor --path . --apps all
 npx -y veloran@latest doctor --apps all --preset harness
 npx -y veloran@latest prompt install
 npx -y veloran@latest prompt plan "Add feature X"
@@ -137,9 +141,20 @@ npx -y veloran@latest prompt telemetry
 
 ## Memory And Secrets
 
-Generated instructions tell agents to read `.agent/memory/` before repeating previous discovery and to update it only with durable, verified, dated facts.
+Generated instructions tell agents to read `.agent/knowledge/` and `.agent/memory/` before repeating previous discovery and to update them only with durable, verified, dated information.
 
-Do not store secrets, tokens, passwords, private keys, customer data, raw production logs, or personal data in `.agent/memory`, `.agent/context`, plans, docs, prompts, transcripts, or validation logs. Veloran prepares example config files; humans fill in externally owned values.
+Veloran knowledge is split by kind:
+
+- `rule`: agent behavior such as safety or workflow rules.
+- `standard`: repeatable technical policy with validation.
+- `fact`: verified observation with date, source, and expiry.
+- `doc`: larger reference or runbook to lazy-load when relevant.
+
+Knowledge composes from broad to specific: user-global `~/.veloran/knowledge/`, repository `.agent/knowledge/`, then nested path `.agent/knowledge/` directories. Agents should default new knowledge to local project scope. User-global knowledge should be created only with explicit user approval or repeated cross-repository evidence.
+
+Use `veloran knowledge print` to inspect the exact ordered bundle for a path, and `veloran knowledge doctor` to validate frontmatter, stale/invalid entries, duplicate ids, and secret-looking content.
+
+Do not store secrets, tokens, passwords, private keys, customer data, raw production logs, or personal data in `.agent/knowledge`, `.agent/memory`, `.agent/context`, plans, docs, prompts, transcripts, or validation logs. Veloran prepares example config files; humans fill in externally owned values.
 
 ## Optional Local Observability
 
@@ -195,5 +210,6 @@ npx -y veloran@latest init --force
 npx -y veloran@latest --help
 npx -y veloran@latest init --help
 npx -y veloran@latest prompt --help
+npx -y veloran@latest knowledge --help
 npx -y veloran@latest doctor --help
 ```

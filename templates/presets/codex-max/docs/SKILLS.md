@@ -6,6 +6,8 @@ Veloran ships three core skills.
 
 Use this skill to inspect a repository and prepare a complete local coding-agent harness: startup, shutdown, status, logs, metrics, traces, browser checks, config examples, memory, and validation.
 
+The skill starts by reading `.agent/knowledge/INDEX.md` and composing applicable user-global, project, and nested path knowledge. It records repo-specific discoveries as local facts or standards unless the user approves a global entry.
+
 ## execplan-create
 
 Use this skill to create a self-contained ExecPlan under `.agent/execplans/` while following `.agent/PLANS.md`.
