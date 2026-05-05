@@ -1,3 +1,12 @@
+## [0.2.20](https://github.com/V0hgg/veloran/compare/v0.2.19...v0.2.20) (2026-05-05)
+
+
+### Features
+
+* improve installer terminal ui ([247a789](https://github.com/V0hgg/veloran/commit/247a78999d59de88aeb3b533b2de32634afcf59b))
+
+
+
 ## [0.2.19](https://github.com/V0hgg/veloran/compare/v0.2.18...v0.2.19) (2026-05-05)
 
 
