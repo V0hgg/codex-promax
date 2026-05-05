@@ -1,3 +1,12 @@
+## [0.2.21](https://github.com/V0hgg/veloran/compare/v0.2.20...v0.2.21) (2026-05-05)
+
+
+### Features
+
+* default installer to global user ([4f2bdd6](https://github.com/V0hgg/veloran/commit/4f2bdd625a077bc641e5ded466351f54c83642a9))
+
+
+
 ## [0.2.20](https://github.com/V0hgg/veloran/compare/v0.2.19...v0.2.20) (2026-05-05)
 
 
