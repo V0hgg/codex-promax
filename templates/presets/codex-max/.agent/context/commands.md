@@ -12,7 +12,7 @@ Record the fastest targeted test commands and the full verification command used
 
 Capture the commands used to start, stop, and inspect the local runtime or harness.
 
-Include `codex-promax prompt telemetry` and the observability smoke commands if this repository uses the codex-max harness.
+Include `veloran prompt telemetry` and the observability smoke commands if this repository uses the codex-max harness.
 
 ## Release
 

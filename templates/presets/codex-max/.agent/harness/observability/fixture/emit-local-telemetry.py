@@ -13,19 +13,19 @@ from dataclasses import dataclass, field
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 
-REQUEST_METRIC_NAME = "codex_promax_fixture_requests_total"
-FAILURE_METRIC_NAME = "codex_promax_fixture_request_failures_total"
-SERVICE_UP_METRIC_NAME = "codex_promax_fixture_service_up"
-LAST_DURATION_METRIC_NAME = "codex_promax_fixture_last_request_duration_milliseconds"
-LAST_REQUEST_TIME_METRIC_NAME = "codex_promax_fixture_last_request_unix_seconds"
-LAST_STATUS_METRIC_NAME = "codex_promax_fixture_last_status_code"
-DOWNSTREAM_REQUEST_METRIC_NAME = "codex_promax_fixture_downstream_requests_total"
+REQUEST_METRIC_NAME = "veloran_fixture_requests_total"
+FAILURE_METRIC_NAME = "veloran_fixture_request_failures_total"
+SERVICE_UP_METRIC_NAME = "veloran_fixture_service_up"
+LAST_DURATION_METRIC_NAME = "veloran_fixture_last_request_duration_milliseconds"
+LAST_REQUEST_TIME_METRIC_NAME = "veloran_fixture_last_request_unix_seconds"
+LAST_STATUS_METRIC_NAME = "veloran_fixture_last_status_code"
+DOWNSTREAM_REQUEST_METRIC_NAME = "veloran_fixture_downstream_requests_total"
 
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(
         description=(
-            "Run a generic multi-service telemetry fixture for codex-promax "
+            "Run a generic multi-service telemetry fixture for Veloran "
             "observability checks."
         ),
     )
@@ -119,13 +119,13 @@ def build_metrics_body(service: ServiceRuntime) -> bytes:
 
     body = "\n".join(
         [
-            f"# HELP {REQUEST_METRIC_NAME} Chained request count for the codex-promax fixture",
+            f"# HELP {REQUEST_METRIC_NAME} Chained request count for the Veloran fixture",
             f"# TYPE {REQUEST_METRIC_NAME} counter",
             f'{REQUEST_METRIC_NAME}{{service="{service.name}"}} {snapshot["request_count"]}',
-            f"# HELP {FAILURE_METRIC_NAME} Failed chained request count for the codex-promax fixture",
+            f"# HELP {FAILURE_METRIC_NAME} Failed chained request count for the Veloran fixture",
             f"# TYPE {FAILURE_METRIC_NAME} counter",
             f'{FAILURE_METRIC_NAME}{{service="{service.name}"}} {snapshot["failure_count"]}',
-            f"# HELP {SERVICE_UP_METRIC_NAME} Service liveness for the codex-promax fixture",
+            f"# HELP {SERVICE_UP_METRIC_NAME} Service liveness for the Veloran fixture",
             f"# TYPE {SERVICE_UP_METRIC_NAME} gauge",
             f'{SERVICE_UP_METRIC_NAME}{{service="{service.name}"}} 1',
             f"# HELP {LAST_DURATION_METRIC_NAME} Duration in milliseconds for the last handled request",
@@ -137,7 +137,7 @@ def build_metrics_body(service: ServiceRuntime) -> bytes:
             f"# HELP {LAST_STATUS_METRIC_NAME} HTTP status code from the last handled request",
             f"# TYPE {LAST_STATUS_METRIC_NAME} gauge",
             f'{LAST_STATUS_METRIC_NAME}{{service="{service.name}"}} {snapshot["last_status_code"]}',
-            f"# HELP {DOWNSTREAM_REQUEST_METRIC_NAME} Downstream requests emitted by the codex-promax fixture",
+            f"# HELP {DOWNSTREAM_REQUEST_METRIC_NAME} Downstream requests emitted by the Veloran fixture",
             f"# TYPE {DOWNSTREAM_REQUEST_METRIC_NAME} counter",
             *downstream_lines,
             "",
@@ -184,7 +184,7 @@ def send_span(
                 },
                 "scopeSpans": [
                     {
-                        "scope": {"name": "codex-promax-fixture"},
+                        "scope": {"name": "veloran-fixture"},
                         "spans": [span],
                     },
                 ],

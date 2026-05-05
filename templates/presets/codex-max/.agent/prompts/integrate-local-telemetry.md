@@ -1,12 +1,12 @@
 # Integrate Local Telemetry Prompt
 
-Paste this prompt into your coding agent from the repository root after `codex-promax init`.
+Paste this prompt into your coding agent from the repository root after `veloran init`.
 
-You are integrating this repository with the Codex-Promax local observability harness that already exists under `.agent/harness/observability/`.
+You are integrating this repository with the Veloran local observability harness that already exists under `.agent/harness/observability/`.
 
 ## Goal
 
-Connect the repository's real local service graph to the existing logs, metrics, and traces pipeline so the Codex-Promax MCP tools (`query_logs`, `query_metrics`, `summarize_service_metrics`, `query_traces`, `list_trace_services`, `list_trace_operations`, `find_traces`) return real application telemetry instead of only scaffold health signals. If one user-visible request depends on several services, treat that clustered path as the primary local runtime to onboard.
+Connect the repository's real local service graph to the existing logs, metrics, and traces pipeline so the Veloran MCP tools (`query_logs`, `query_metrics`, `summarize_service_metrics`, `query_traces`, `list_trace_services`, `list_trace_operations`, `find_traces`) return real application telemetry instead of only scaffold health signals. If one user-visible request depends on several services, treat that clustered path as the primary local runtime to onboard.
 
 ## Hard Rules
 
@@ -33,7 +33,7 @@ Connect the repository's real local service graph to the existing logs, metrics,
    - traces from local-only OpenTelemetry export settings with preserved service identity
 6. If the repository already exposes logs or metrics in a different safe local path, adapt the harness to that path rather than forcing a worse abstraction.
 7. Validate end to end:
-   - `codex-promax doctor`
+   - `veloran doctor`
    - start the observability Docker stack
    - start the repository's local services through the reused or wrapped local start path
    - send one real request through the highest-level user-facing entrypoint you can validate safely

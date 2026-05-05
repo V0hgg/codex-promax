@@ -49,8 +49,8 @@ function execPromptString(planFile: string): string {
 
 function installPromptString(): string {
   return [
-    "Install Codex-Promax for this repository end-to-end.",
-    "https://github.com/V0hgg/codex-promax/blob/main/docs/AGENT_INSTALL.md",
+    "Install Veloran for this repository end-to-end.",
+    "https://github.com/V0hgg/veloran/blob/main/docs/AGENT_INSTALL.md",
   ].join("\n");
 }
 

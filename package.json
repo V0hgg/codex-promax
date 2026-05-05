@@ -1,18 +1,18 @@
 {
-  "name": "codex-promax",
+  "name": "veloran",
   "version": "0.2.10",
   "description": "Scaffold and validate ExecPlan workflows for AI coding assistants",
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/V0hgg/codex-promax"
+    "url": "https://github.com/V0hgg/veloran"
   },
-  "homepage": "https://github.com/V0hgg/codex-promax",
+  "homepage": "https://github.com/V0hgg/veloran",
   "bugs": {
-    "url": "https://github.com/V0hgg/codex-promax/issues"
+    "url": "https://github.com/V0hgg/veloran/issues"
   },
   "bin": {
-    "codex-promax": "dist/cli.js"
+    "veloran": "dist/cli.js"
   },
   "files": [
     "dist",

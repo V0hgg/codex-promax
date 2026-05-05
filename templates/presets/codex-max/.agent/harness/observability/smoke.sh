@@ -63,8 +63,8 @@ fi
 # 2) Metrics check (real HTTP endpoints scraped through Vector)
 metrics_ok=false
 for _ in {1..60}; do
-  metrics_response="$(curl -fsS 'http://127.0.0.1:8428/prometheus/api/v1/query' -d 'query=codex_promax_fixture_requests_total' || true)"
-  latency_response="$(curl -fsS 'http://127.0.0.1:8428/prometheus/api/v1/query' -d 'query=codex_promax_fixture_last_request_duration_milliseconds' || true)"
+  metrics_response="$(curl -fsS 'http://127.0.0.1:8428/prometheus/api/v1/query' -d 'query=veloran_fixture_requests_total' || true)"
+  latency_response="$(curl -fsS 'http://127.0.0.1:8428/prometheus/api/v1/query' -d 'query=veloran_fixture_last_request_duration_milliseconds' || true)"
   if [[ "$metrics_response" == *"gateway-api"* && "$metrics_response" == *"workflow-api"* && "$metrics_response" == *"data-api"* \
      && "$latency_response" == *"gateway-api"* && "$latency_response" == *"workflow-api"* && "$latency_response" == *"data-api"* ]]; then
     metrics_ok=true

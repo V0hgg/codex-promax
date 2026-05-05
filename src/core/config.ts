@@ -13,6 +13,7 @@ export interface CommonOptions {
   planDir?: string;
   execplansDir?: string;
   skillsDir?: string;
+  claudeSkillsDir?: string;
   force?: boolean;
   dryRun?: boolean;
   verbose?: boolean;
@@ -28,8 +29,11 @@ export interface ResolvedConfig {
   plansFilePath: string;
   execplansDirPath: string;
   skillsDirPath: string;
+  claudeSkillsDirPath: string;
   execplanCreateSkillPath: string;
   execplanExecuteSkillPath: string;
+  claudeExecplanCreateSkillPath: string;
+  claudeExecplanExecuteSkillPath: string;
   force: boolean;
   dryRun: boolean;
   verbose: boolean;
@@ -49,9 +53,20 @@ export function resolveConfig(options: CommonOptions, cwd: string = process.cwd(
   const planDirPath = resolvePath(root, options.planDir ?? ".agent");
   const execplansDirPath = resolvePath(root, options.execplansDir ?? ".agent/execplans");
   const skillsDirPath = resolvePath(root, options.skillsDir ?? ".agents/skills");
+  const claudeSkillsDirPath = resolvePath(root, options.claudeSkillsDir ?? ".claude/skills");
 
   const execplanCreateSkillPath = path.join(skillsDirPath, "execplan-create", "SKILL.md");
   const execplanExecuteSkillPath = path.join(skillsDirPath, "execplan-execute", "SKILL.md");
+  const claudeExecplanCreateSkillPath = path.join(
+    claudeSkillsDirPath,
+    "execplan-create",
+    "SKILL.md",
+  );
+  const claudeExecplanExecuteSkillPath = path.join(
+    claudeSkillsDirPath,
+    "execplan-execute",
+    "SKILL.md",
+  );
 
   return {
     root,
@@ -63,8 +78,11 @@ export function resolveConfig(options: CommonOptions, cwd: string = process.cwd(
     plansFilePath: path.join(planDirPath, "PLANS.md"),
     execplansDirPath,
     skillsDirPath,
+    claudeSkillsDirPath,
     execplanCreateSkillPath,
     execplanExecuteSkillPath,
+    claudeExecplanCreateSkillPath,
+    claudeExecplanExecuteSkillPath,
     force: Boolean(options.force),
     dryRun: Boolean(options.dryRun),
     verbose: Boolean(options.verbose),

@@ -151,11 +151,11 @@ async function main() {
 
     const metricsResult = await request("tools/call", {
       name: "query_metrics",
-      arguments: { query: "codex_promax_fixture_requests_total" },
+      arguments: { query: "veloran_fixture_requests_total" },
     });
     const metricsText = metricsResult?.content?.[0]?.text ?? "";
-    if (!metricsText.includes("codex_promax_fixture_requests_total")) {
-      throw new Error("MCP query_metrics did not return codex_promax_fixture_requests_total");
+    if (!metricsText.includes("veloran_fixture_requests_total")) {
+      throw new Error("MCP query_metrics did not return veloran_fixture_requests_total");
     }
     for (const serviceName of expectedServices) {
       if (!metricsText.includes(serviceName)) {
@@ -173,9 +173,9 @@ async function main() {
         throw new Error(`summarize_service_metrics did not return ${serviceName}`);
       }
       for (const metricName of [
-        "codex_promax_fixture_requests_total",
-        "codex_promax_fixture_last_request_duration_milliseconds",
-        "codex_promax_fixture_service_up",
+        "veloran_fixture_requests_total",
+        "veloran_fixture_last_request_duration_milliseconds",
+        "veloran_fixture_service_up",
       ]) {
         if (!summaryText.includes(metricName)) {
           throw new Error(`summarize_service_metrics missing ${metricName} for ${serviceName}`);

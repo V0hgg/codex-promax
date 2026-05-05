@@ -8,7 +8,7 @@ Record the smallest command that validates a local change in this repository.
 
 Record the commands for typecheck, lint, integration tests, end-to-end checks, build verification, and any smoke flows.
 
-If local observability matters, note the exact commands for `codex-promax doctor`, Docker stack startup, `bash .agent/harness/observability/smoke.sh`, and any repository-specific telemetry validation.
+If local observability matters, note the exact commands for `veloran doctor`, Docker stack startup, `bash .agent/harness/observability/smoke.sh`, and any repository-specific telemetry validation.
 
 ## Common Failure Modes
 

@@ -8,7 +8,8 @@ describe("assistant target parsing", () => {
       values: ["opencode"],
       needsAgentsFile: true,
       needsClaudeFile: false,
-      needsAgentSkills: true,
+      needsSharedSkills: true,
+      needsClaudeSkills: false,
     });
   });
 
@@ -17,7 +18,8 @@ describe("assistant target parsing", () => {
       values: ["agents"],
       needsAgentsFile: true,
       needsClaudeFile: false,
-      needsAgentSkills: false,
+      needsSharedSkills: false,
+      needsClaudeSkills: false,
     });
   });
 
@@ -26,7 +28,8 @@ describe("assistant target parsing", () => {
       values: ["agents"],
       needsAgentsFile: true,
       needsClaudeFile: false,
-      needsAgentSkills: false,
+      needsSharedSkills: false,
+      needsClaudeSkills: false,
     });
   });
 
@@ -35,7 +38,8 @@ describe("assistant target parsing", () => {
       values: ["augment", "claude", "codex", "opencode"],
       needsAgentsFile: true,
       needsClaudeFile: true,
-      needsAgentSkills: true,
+      needsSharedSkills: true,
+      needsClaudeSkills: true,
     });
   });
 

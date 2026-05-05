@@ -1,6 +1,6 @@
 # Local Observability Overrides
 
-Use this directory for machine-local files and reusable examples needed to connect a real repository to the codex-promax observability stack.
+Use this directory for machine-local files and reusable examples needed to connect a real repository to the Veloran observability stack.
 
 Keep committed:
 

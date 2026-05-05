@@ -4,7 +4,8 @@ export interface AssistantTargets {
   values: Assistant[];
   needsAgentsFile: boolean;
   needsClaudeFile: boolean;
-  needsAgentSkills: boolean;
+  needsSharedSkills: boolean;
+  needsClaudeSkills: boolean;
 }
 
 const ASSISTANT_ALIASES = new Map<string, Assistant>([["common", "agents"]]);
@@ -23,7 +24,8 @@ const AGENTS_FILE_ASSISTANTS = new Set<Assistant>([
   "augment",
   "opencode",
 ]);
-const AGENT_SKILL_ASSISTANTS = new Set<Assistant>(["codex", "opencode"]);
+const SHARED_SKILL_ASSISTANTS = new Set<Assistant>(["codex", "opencode"]);
+const CLAUDE_SKILL_ASSISTANTS = new Set<Assistant>(["claude"]);
 
 export function parseAssistants(input: string | undefined): AssistantTargets {
   const raw = (input ?? "all")
@@ -62,6 +64,7 @@ export function parseAssistants(input: string | undefined): AssistantTargets {
     values,
     needsAgentsFile: values.some((assistant) => AGENTS_FILE_ASSISTANTS.has(assistant)),
     needsClaudeFile: expanded.has("claude") || expanded.has("augment"),
-    needsAgentSkills: values.some((assistant) => AGENT_SKILL_ASSISTANTS.has(assistant)),
+    needsSharedSkills: values.some((assistant) => SHARED_SKILL_ASSISTANTS.has(assistant)),
+    needsClaudeSkills: values.some((assistant) => CLAUDE_SKILL_ASSISTANTS.has(assistant)),
   };
 }

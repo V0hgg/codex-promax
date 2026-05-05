@@ -77,6 +77,25 @@ describe("doctor", () => {
     expect(io.lines).toEqual(["OK"]);
   });
 
+  it("checks Claude Code skill files for claude targets", async () => {
+    const root = createTempWorkspace();
+    initGitMarker(root);
+
+    await runInit({ root, assistants: "claude" });
+
+    fs.unlinkSync(path.join(root, ".claude", "skills", "execplan-create", "SKILL.md"));
+
+    const io = captureIo();
+    const code = await runDoctor({ root, assistants: "claude" }, io.io);
+
+    expect(code).toBe(1);
+    expect(
+      io.lines.some((line) =>
+        line.includes(".claude/skills/execplan-create/SKILL.md"),
+      ),
+    ).toBe(true);
+  });
+
   it("checks shared skill files for opencode targets", async () => {
     const root = createTempWorkspace();
     initGitMarker(root);

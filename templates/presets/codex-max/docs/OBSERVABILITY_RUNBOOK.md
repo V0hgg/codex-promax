@@ -18,8 +18,8 @@ This runbook validates:
 Run from repository root:
 
 ```bash
-codex-promax init
-codex-promax doctor
+veloran init
+veloran doctor
 docker compose -f .agent/harness/observability/docker-compose.yml up -d
 bash .agent/harness/observability/smoke.sh
 docker compose -f .agent/harness/observability/docker-compose.yml down -v
@@ -28,7 +28,7 @@ docker compose -f .agent/harness/observability/docker-compose.yml down -v
 To connect your real repository services instead of the built-in smoke fixture:
 
 ```bash
-codex-promax prompt telemetry
+veloran prompt telemetry
 ```
 
 Or open:
@@ -69,18 +69,18 @@ This gives you evidence that the harness can ingest the same shape of clustered 
 Use this prompt with your coding assistant inside the target repository:
 
 ```text
-I just installed codex-promax in this repository. Please verify that the docs scaffold, shared agent context cache, readiness prompts, local observability stack, and MCP observability tools are all working end to end.
+I just installed veloran in this repository. Please verify that the docs scaffold, shared agent context cache, readiness prompts, local observability stack, and MCP observability tools are all working end to end.
 
-Run codex-promax doctor, confirm the shared prompt files and docs exist (including docs/LOCAL_TELEMETRY_SETUP.md), check that the Codex/Claude/OpenCode config files still parse, start the observability Docker stack, run the smoke checks, and validate the MCP observability tools with real queries that cover the whole chained fixture. Include at least raw log lookup, raw metrics lookup, service metric summarization, trace service listing, trace operation lookup, and one real trace search for gateway-api.
+Run veloran doctor, confirm the shared prompt files and docs exist (including docs/LOCAL_TELEMETRY_SETUP.md), check that the Codex/Claude/OpenCode config files still parse, start the observability Docker stack, run the smoke checks, and validate the MCP observability tools with real queries that cover the whole chained fixture. Include at least raw log lookup, raw metrics lookup, service metric summarization, trace service listing, trace operation lookup, and one real trace search for gateway-api.
 
 If anything fails, apply the smallest safe fix and re-test until all checks pass or a clear blocker is found. Write the full evidence (commands run, key outputs, MCP results, fixes, and final readiness status) to docs/generated/observability-validation.md, then stop the Docker stack and return a short PASS/FAIL summary with remaining risks.
 ```
 
 ## Definition Of Pass
 
-- `codex-promax doctor` prints `OK`
+- `veloran doctor` prints `OK`
 - `smoke.sh` prints PASS for logs, metrics, traces
 - the raw MCP query tools (`query_logs`, `query_metrics`, `query_traces`) return successful responses with expected signal
-- `summarize_service_metrics` returns service-labeled metrics including `codex_promax_fixture_requests_total` and `codex_promax_fixture_last_request_duration_milliseconds`
+- `summarize_service_metrics` returns service-labeled metrics including `veloran_fixture_requests_total` and `veloran_fixture_last_request_duration_milliseconds`
 - `list_trace_services`, `list_trace_operations`, and `find_traces` return useful trace detail for the chained fixture
 - `docs/generated/observability-validation.md` is updated with the current run details

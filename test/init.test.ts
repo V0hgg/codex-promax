@@ -39,6 +39,12 @@ describe("init", () => {
     expect(
       fs.existsSync(path.join(root, ".agents", "skills", "execplan-execute", "SKILL.md")),
     ).toBe(true);
+    expect(
+      fs.existsSync(path.join(root, ".claude", "skills", "execplan-create", "SKILL.md")),
+    ).toBe(true);
+    expect(
+      fs.existsSync(path.join(root, ".claude", "skills", "execplan-execute", "SKILL.md")),
+    ).toBe(true);
 
     const agents = readFile(root, "AGENTS.md");
     expect(agents).toContain("<!-- execplans:begin -->");
@@ -49,9 +55,12 @@ describe("init", () => {
     const skill = readFile(root, ".agents/skills/execplan-create/SKILL.md");
     expect(skill).toContain("name: execplan-create");
     expect(skill).toContain("description:");
+    const claudeSkill = readFile(root, ".claude/skills/execplan-create/SKILL.md");
+    expect(claudeSkill).toContain("name: execplan-create");
+    expect(claudeSkill).toContain("description:");
 
     expect(io.lines.some((line) => line.startsWith("Create:"))).toBe(false);
-    expect(io.lines.some((line) => line.includes("Codex-Promax is ready."))).toBe(true);
+    expect(io.lines.some((line) => line.includes("Veloran is ready."))).toBe(true);
     expect(io.lines.some((line) => line.includes("telemetry prompt:"))).toBe(true);
     expect(
       io.lines.some((line) => line.includes(".agent/prompts/integrate-local-telemetry.md")),
@@ -61,7 +70,7 @@ describe("init", () => {
     ).toBe(true);
     expect(io.lines.some((line) => line.includes("wait for it to finish."))).toBe(true);
     expect(io.lines.some((line) => line.includes("cluster/bootstrap start path"))).toBe(true);
-    expect(io.lines.some((line) => line.includes("npx -y codex-promax@latest doctor"))).toBe(true);
+    expect(io.lines.some((line) => line.includes("npx -y veloran@latest doctor"))).toBe(true);
   });
 
   it("supports opting into the minimal standard preset explicitly", async () => {
@@ -88,6 +97,22 @@ describe("init", () => {
     ).toBe(true);
     expect(
       fs.existsSync(path.join(root, ".agents", "skills", "execplan-execute", "SKILL.md")),
+    ).toBe(true);
+  });
+
+  it("scaffolds claude with CLAUDE.md and native Claude Code skills", async () => {
+    const root = createTempWorkspace();
+    initGitMarker(root);
+
+    await runInit({ root, assistants: "claude" });
+
+    expect(fs.existsSync(path.join(root, "AGENTS.md"))).toBe(false);
+    expect(fs.existsSync(path.join(root, "CLAUDE.md"))).toBe(true);
+    expect(
+      fs.existsSync(path.join(root, ".claude", "skills", "execplan-create", "SKILL.md")),
+    ).toBe(true);
+    expect(
+      fs.existsSync(path.join(root, ".claude", "skills", "execplan-execute", "SKILL.md")),
     ).toBe(true);
   });
 
@@ -204,7 +229,7 @@ describe("init", () => {
     await runInit({ root, verbose: true }, io.io);
 
     expect(io.lines.some((line) => line.startsWith("Create:"))).toBe(true);
-    expect(io.lines.some((line) => line.includes("Codex-Promax is ready."))).toBe(true);
+    expect(io.lines.some((line) => line.includes("Veloran is ready."))).toBe(true);
     expect(
       io.lines.some((line) => line.includes(".agent/prompts/integrate-local-telemetry.md")),
     ).toBe(true);
@@ -263,6 +288,7 @@ describe("init", () => {
       ".claude/agents/reviewer.md",
       ".claude/rules/context-cache.md",
       ".claude/rules/verification.md",
+      ".claude/skills/ui-legibility/SKILL.md",
       ".codex/agents/browser-debugger.toml",
       ".codex/agents/code-mapper.toml",
       ".codex/agents/docs-researcher.toml",
@@ -326,6 +352,9 @@ describe("init", () => {
     const claudeReviewer = readFile(root, ".claude/agents/reviewer.md");
     expect(claudeReviewer).toContain("name: reviewer");
     expect(claudeReviewer).toContain("correctness-first review");
+    const claudeUiSkill = readFile(root, ".claude/skills/ui-legibility/SKILL.md");
+    expect(claudeUiSkill).toContain("DOM snapshots");
+    expect(claudeUiSkill).toContain("screenshots");
 
     const openCodeConfig = JSON.parse(readFile(root, "opencode.json")) as {
       instructions: string[];

@@ -23,6 +23,7 @@ interface CommonCliOptions {
   planDir?: string;
   execplansDir?: string;
   skillsDir?: string;
+  claudeSkillsDir?: string;
   force?: boolean;
   dryRun?: boolean;
 }
@@ -45,7 +46,12 @@ function addCommonOptions(command: Command): Command {
     .addOption(
       new Option("--execplans-dir <path>", "path to execplans directory").default(".agent/execplans"),
     )
-    .addOption(new Option("--skills-dir <path>", "path to skills directory").default(".agents/skills"))
+    .addOption(
+      new Option("--skills-dir <path>", "path to shared skills directory").default(".agents/skills"),
+    )
+    .addOption(
+      new Option("--claude-skills-dir <path>", "path to Claude Code skills directory").default(".claude/skills"),
+    )
     .addOption(new Option("--force", "overwrite managed templates and blocks").default(false))
     .addOption(new Option("--dry-run", "show planned changes without writing files").default(false));
 }
@@ -56,7 +62,7 @@ async function main(): Promise<void> {
 
   const program = new Command();
   program
-    .name("codex-promax")
+    .name("veloran")
     .description("Scaffold and validate ExecPlan workflows")
     .version(packageVersion)
     .showHelpAfterError();
@@ -77,7 +83,7 @@ async function main(): Promise<void> {
   addCommonOptions(
     prompt
       .command("install")
-      .description("print prompt for a coding agent to install and initialize codex-promax")
+      .description("print prompt for a coding agent to install and initialize veloran")
       .action(async (options: CommonCliOptions) => {
         const code = await runPromptInstall(options);
         process.exitCode = code;

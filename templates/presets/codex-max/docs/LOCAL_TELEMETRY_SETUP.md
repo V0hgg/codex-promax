@@ -1,6 +1,6 @@
 # Local Telemetry Setup
 
-Use this guide after `codex-promax init` when you want the packaged observability MCP tools to read telemetry from your real local services.
+Use this guide after `veloran init` when you want the packaged observability MCP tools to read telemetry from your real local services.
 
 ## What This Setup Does
 
@@ -10,7 +10,7 @@ The scaffold already gives you:
 - MCP query tools for raw logs/metrics/traces plus richer service-level metrics and trace lookup
 - a stronger smoke check that proves the local ingestion contract works
 
-What it does not know yet is how your repository starts its real local service graph. That last mile is repository-specific, so Codex-Promax gives you a prompt to paste into your coding agent instead of mutating the repository automatically.
+What it does not know yet is how your repository starts its real local service graph. That last mile is repository-specific, so Veloran gives you a prompt to paste into your coding agent instead of mutating the repository automatically.
 
 ## What Stays Unchanged
 
@@ -36,7 +36,7 @@ This workflow is designed to stay local-only:
 Reprint the same prompt later with:
 
 ```bash
-codex-promax prompt telemetry
+veloran prompt telemetry
 ```
 
 ## Recommended Flow
@@ -78,7 +78,7 @@ If local startup depends on secrets, tokens, cloud credentials, or external serv
 Start with scaffold health:
 
 ```bash
-codex-promax doctor
+veloran doctor
 docker compose -f .agent/harness/observability/docker-compose.yml up -d
 bash .agent/harness/observability/smoke.sh
 docker compose -f .agent/harness/observability/docker-compose.yml down -v

@@ -116,6 +116,7 @@ verify_docs_structure() {
     ".claude/agents/reviewer.md"
     ".claude/rules/context-cache.md"
     ".claude/rules/verification.md"
+    ".claude/skills/ui-legibility/SKILL.md"
     ".codex/config.toml"
     ".codex/agents/browser-debugger.toml"
     ".codex/agents/code-mapper.toml"
@@ -178,10 +179,10 @@ verify_docs_structure() {
   grep -q 'Integrate Local Telemetry Prompt' "$TARGET_REPO/.agent/prompts/integrate-local-telemetry.md" || fail "Missing telemetry onboarding prompt"
   grep -q 'If the correct start path cannot be inferred safely' "$TARGET_REPO/.agent/prompts/integrate-local-telemetry.md" || fail "Telemetry prompt missing safe handoff guidance"
   grep -q 'service-topology.example.yaml' "$TARGET_REPO/.agent/prompts/integrate-local-telemetry.md" || fail "Telemetry prompt missing topology artifact guidance"
-  grep -q 'codex-promax prompt telemetry' "$TARGET_REPO/docs/LOCAL_TELEMETRY_SETUP.md" || fail "Telemetry guide missing prompt command"
+  grep -q 'veloran prompt telemetry' "$TARGET_REPO/docs/LOCAL_TELEMETRY_SETUP.md" || fail "Telemetry guide missing prompt command"
   grep -q 'cluster/bootstrap' "$TARGET_REPO/docs/LOCAL_TELEMETRY_SETUP.md" || fail "Telemetry guide missing cluster guidance"
   grep -q '.agent/prompts/validate-readiness.md' "$TARGET_REPO/docs/OBSERVABILITY_RUNBOOK.md" || fail "Runbook missing readiness playbook guidance"
-  grep -qi 'I just installed codex-promax' "$TARGET_REPO/docs/OBSERVABILITY_RUNBOOK.md" || fail "Runbook missing natural-language validation prompt"
+  grep -qi 'I just installed veloran' "$TARGET_REPO/docs/OBSERVABILITY_RUNBOOK.md" || fail "Runbook missing natural-language validation prompt"
   grep -q 'query_logs' "$TARGET_REPO/docs/OBSERVABILITY_RUNBOOK.md" || fail "Runbook missing MCP query guidance"
   grep -q 'docs/generated/observability-validation.md' "$TARGET_REPO/docs/OBSERVABILITY_RUNBOOK.md" || fail "Runbook missing validation report target"
   grep -q 'Ready for Codex coding work: YES/NO' "$TARGET_REPO/docs/generated/observability-validation.md" || fail "Validation report missing readiness status field"
@@ -257,12 +258,12 @@ main() {
 
   log "Running init + doctor"
   npx --yes --prefix "$TARGET_REPO" "$PACKAGE_NAME" init --root "$TARGET_REPO" | tee "$INIT_LOG"
-  grep -q 'Codex-Promax is ready\.' "$INIT_LOG" || fail "Init output missing ready summary"
+  grep -q 'Veloran is ready\.' "$INIT_LOG" || fail "Init output missing ready summary"
   grep -q 'telemetry prompt:' "$INIT_LOG" || fail "Init output missing telemetry prompt command heading"
   grep -q '.agent/prompts/integrate-local-telemetry.md' "$INIT_LOG" || fail "Init output missing saved prompt file path"
   grep -q 'paste it into your coding agent in this repo' "$INIT_LOG" || fail "Init output missing agent handoff guidance"
   grep -q 'cluster/bootstrap start path' "$INIT_LOG" || fail "Init output missing cluster-first guidance"
-  grep -q 'npx -y codex-promax@latest doctor' "$INIT_LOG" || fail "Init output missing npx doctor command"
+  grep -q 'npx -y veloran@latest doctor' "$INIT_LOG" || fail "Init output missing npx doctor command"
   if grep -Eq '^(Create|Skip|Update):' "$INIT_LOG"; then
     fail "Init output should be quiet by default"
   fi
@@ -299,10 +300,8 @@ main() {
 
   log "Checking prompt install CLI output"
   install_prompt="$(npx --yes --prefix "$TARGET_REPO" "$PACKAGE_NAME" prompt install)"
-  printf '%s' "$install_prompt" | grep -q 'Install Codex-Promax in this repository end-to-end.' || fail "Install prompt missing heading"
-  printf '%s' "$install_prompt" | grep -q 'npx -y codex-promax@latest init --preset codex-max --assistants all' || fail "Install prompt missing init command"
-  printf '%s' "$install_prompt" | grep -q 'npx -y codex-promax@latest doctor --preset codex-max --assistants all' || fail "Install prompt missing doctor command"
-  printf '%s' "$install_prompt" | grep -q '.agent/prompts/integrate-local-telemetry.md' || fail "Install prompt missing telemetry path"
+  printf '%s' "$install_prompt" | grep -q 'Install Veloran for this repository end-to-end.' || fail "Install prompt missing heading"
+  printf '%s' "$install_prompt" | grep -q 'https://github.com/V0hgg/veloran/blob/main/docs/AGENT_INSTALL.md' || fail "Install prompt missing guide URL"
 
   log "Checking MCP observability tools"
   node "$E2E_DIR/mcp-observability-check.mjs" "$TARGET_REPO"

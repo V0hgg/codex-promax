@@ -6,7 +6,7 @@ This plan must be maintained in accordance with `.agent/PLANS.md` from the repos
 
 ## Purpose / Big Picture
 
-After this work, a developer will be able to run one command in any Git repository and get a complete, OpenAI-harness-style starting point: a rich documentation structure, project-local Codex MCP setup for UI inspection and observability queries, and worktree-scoped boot scripts so each git worktree can run in isolation. The new behavior is visible immediately by running `execplans init --preset codex-max` in a fresh repository, then verifying generated files, MCP server config, and observability queries.
+After this work, a developer will be able to run one command in any Git repository and get a complete, OpenAI-harness-style starting point: a rich documentation structure, project-local Codex MCP setup for UI inspection and observability queries, and worktree-scoped boot scripts so each git worktree can run in isolation. The new behavior is visible immediately by running `veloran init --preset codex-max` in a fresh repository, then verifying generated files, MCP server config, and observability queries.
 
 This change matters because it turns this package from a minimal ExecPlan scaffold into a reusable engineering harness installer that other repositories can adopt with minimal manual setup.
 
@@ -14,11 +14,11 @@ This change matters because it turns this package from a minimal ExecPlan scaffo
 
 This plan is complete when all of the following are true and proven with command output:
 
-1. `execplans init --preset codex-max` creates the requested docs topology and top-level docs files exactly, including `AGENTS.md`, `ARCHITECTURE.md`, and the `docs/` subtree defined in this plan.
+1. `veloran init --preset codex-max` creates the requested docs topology and top-level docs files exactly, including `AGENTS.md`, `ARCHITECTURE.md`, and the `docs/` subtree defined in this plan.
 2. Generated project config includes `.codex/config.toml` entries for a Chrome DevTools MCP server and an observability MCP server, with project-scoped paths so each git worktree can run independently.
 3. Generated harness scripts can boot and stop a worktree-local runtime plus local observability stack without editing source code first.
 4. Observability stack includes Vector fan-out plus Victoria Logs, Victoria Metrics, and Victoria Traces endpoints; queries succeed through both direct HTTP checks and the generated observability MCP adapter.
-5. `execplans doctor` can validate the codex-max scaffold and report actionable fixes when critical files are missing or malformed.
+5. `veloran doctor` can validate the codex-max scaffold and report actionable fixes when critical files are missing or malformed.
 6. End-to-end external install proof passes: package is packed, installed into a different repo, initialized, and verified with the documented smoke tests.
 
 ## Progress
@@ -31,11 +31,11 @@ This plan is complete when all of the following are true and proven with command
 - [x] (2026-02-17 09:21Z) Implemented Milestone 3: added Chrome DevTools MCP config, worktree `up/down/status` scripts, and `ui-legibility` skill scaffold; validated with build + fresh-repo MCP/skill grep checks and runtime script smoke.
 - [x] (2026-02-17 16:24Z) Completed Milestone 4 runtime validation: Docker compose stack boots cleanly and `.agent/harness/observability/smoke.sh` returns PASS for logs, metrics, and traces.
 - [x] (2026-02-17 09:25Z) Implemented Milestone 5: added preset-aware `doctor` checks for codex-max artifacts, added codex-max doctor tests, and updated README validation/troubleshooting commands.
-- [x] (2026-02-17 16:36Z) Completed Milestone 6 final acceptance in a second repository: packed tarball, installed package, ran `execplans init --preset codex-max`, got `doctor` `OK`, passed observability smoke checks, and verified MCP `query_logs`/`query_metrics`/`query_traces` tool calls.
+- [x] (2026-02-17 16:36Z) Completed Milestone 6 final acceptance in a second repository: packed tarball, installed package, ran `veloran init --preset codex-max`, got `doctor` `OK`, passed observability smoke checks, and verified MCP `query_logs`/`query_metrics`/`query_traces` tool calls.
 
 ## Surprises & Discoveries
 
-- Observation: Current `execplans init` scaffolds only a small baseline (`.agent/PLANS.md`, `.agent/execplans/README.md`, managed assistant files, and two codex skill files), so codex-max needs a new preset path rather than trying to overload defaults.
+- Observation: Current `veloran init` scaffolds only a small baseline (`.agent/PLANS.md`, `.agent/execplans/README.md`, managed assistant files, and two codex skill files), so codex-max needs a new preset path rather than trying to overload defaults.
   Evidence: `src/commands/init.ts` currently writes only six template targets and no nested docs tree.
 
 - Observation: Codex project-scoped MCP configuration is supported through `.codex/config.toml`, and MCP servers can be defined per project/worktree via `[mcp_servers.<id>]` tables.
@@ -51,7 +51,7 @@ This plan is complete when all of the following are true and proven with command
   Evidence: `.gitkeep` files appeared in `find ... -type f` output and made directory existence check deterministic.
 
 - Observation: Worktree helper scripts must derive repository root from script location, not caller working directory, or they can write runtime state into the wrong repository.
-  Evidence: Initial verification run wrote state under `/Users/hunter/v0hgg/execplans/.agent/harness/state`; after fixing `common.sh` root resolution, state moved correctly under the scaffolded temp repo path.
+  Evidence: Initial verification run wrote state under `/Users/hunter/v0hgg/veloran/.agent/harness/state`; after fixing `common.sh` root resolution, state moved correctly under the scaffolded temp repo path.
 
 - Observation: Docker daemon availability was an environment risk, but once Docker Desktop was running, the generated observability stack validated exactly as designed.
   Evidence: `docker compose ... up -d` succeeded and smoke output reported `[smoke] logs query: PASS`, `[smoke] metrics query: PASS`, and `[smoke] traces query: PASS` in fresh target repos.
@@ -159,7 +159,7 @@ Edit `src/cli.ts` to add `--preset <name>` to shared options, defaulting to `sta
 
 Validation commands for this milestone:
 
-    cd /Users/hunter/v0hgg/execplans
+    cd /Users/hunter/v0hgg/veloran
     npm test -- test/init.test.ts
     npm run typecheck
 
@@ -175,7 +175,7 @@ Update tests in `test/init.test.ts` to assert existence of the new topology when
 
 Validation commands for this milestone:
 
-    cd /Users/hunter/v0hgg/execplans
+    cd /Users/hunter/v0hgg/veloran
     npm test -- test/init.test.ts
     npm run build
     tmp_repo="$(mktemp -d)"
@@ -191,11 +191,11 @@ Add generated worktree-local runtime scripts and Codex MCP configuration for bro
 
 Generate `.codex/config.toml` in codex-max with a `[mcp_servers.chrome_devtools]` entry using stdio launch (command + args). Add generated scripts under `.agent/harness/worktree/` for start/stop/status, with per-worktree state in `.agent/harness/state/<worktree-hash>.env`. Add generated skill docs in `.agents/skills/ui-legibility/SKILL.md` describing DOM snapshot, screenshot, and navigation workflows against the configured MCP tools.
 
-Update README usage docs so users know to run `execplans init --preset codex-max` and then the worktree boot script. Extend init tests to confirm `.codex/config.toml` and harness scripts are created for codex-max.
+Update README usage docs so users know to run `veloran init --preset codex-max` and then the worktree boot script. Extend init tests to confirm `.codex/config.toml` and harness scripts are created for codex-max.
 
 Validation commands for this milestone:
 
-    cd /Users/hunter/v0hgg/execplans
+    cd /Users/hunter/v0hgg/veloran
     npm test -- test/init.test.ts
     npm run build
     tmp_repo="$(mktemp -d)"
@@ -217,7 +217,7 @@ Update `.codex/config.toml` generation to include `[mcp_servers.observability]` 
 
 Validation commands for this milestone:
 
-    cd /Users/hunter/v0hgg/execplans
+    cd /Users/hunter/v0hgg/veloran
     npm run build
     tmp_repo="$(mktemp -d)"
     git -C "$tmp_repo" init
@@ -238,11 +238,11 @@ Update `test/doctor.test.ts` with passing and failing codex-max scenarios, inclu
 
 Validation commands for this milestone:
 
-    cd /Users/hunter/v0hgg/execplans
+    cd /Users/hunter/v0hgg/veloran
     npm test -- test/doctor.test.ts test/init.test.ts
     npm run ci
 
-Milestone Definition of Done: `execplans doctor --preset codex-max` returns `OK` on a healthy codex-max scaffold and returns clear `Fix:` messages when artifacts are missing.
+Milestone Definition of Done: `veloran doctor --preset codex-max` returns `OK` on a healthy codex-max scaffold and returns clear `Fix:` messages when artifacts are missing.
 
 ### Milestone 6: Cross-repo install proof (final acceptance)
 
@@ -252,15 +252,15 @@ Create a local package tarball from this repo, install it into a second temporar
 
 Validation commands for this milestone:
 
-    cd /Users/hunter/v0hgg/execplans
+    cd /Users/hunter/v0hgg/veloran
     npm pack
-    pkg_tgz="$(ls -1t execplans-*.tgz | head -n1)"
+    pkg_tgz="$(ls -1t veloran-*.tgz | head -n1)"
     target_repo="$(mktemp -d)"
     git -C "$target_repo" init
     npm -C "$target_repo" init -y
-    npm -C "$target_repo" install --save-dev "/Users/hunter/v0hgg/execplans/$pkg_tgz"
-    npx --prefix "$target_repo" execplans init --root "$target_repo" --preset codex-max
-    npx --prefix "$target_repo" execplans doctor --root "$target_repo" --preset codex-max
+    npm -C "$target_repo" install --save-dev "/Users/hunter/v0hgg/veloran/$pkg_tgz"
+    npx --prefix "$target_repo" veloran init --root "$target_repo" --preset codex-max
+    npx --prefix "$target_repo" veloran doctor --root "$target_repo" --preset codex-max
     docker compose -f "$target_repo/.agent/harness/observability/docker-compose.yml" up -d
     bash "$target_repo/.agent/harness/observability/smoke.sh"
     docker compose -f "$target_repo/.agent/harness/observability/docker-compose.yml" down -v
@@ -282,8 +282,8 @@ Run implementation in order and commit after each milestone so rollback is simpl
 
 Acceptance is behavior-based and must be demonstrated from a clean target repository:
 
-- `execplans init --preset codex-max` generates the full docs topology and harness artifacts.
-- `execplans doctor --preset codex-max` returns `OK`.
+- `veloran init --preset codex-max` generates the full docs topology and harness artifacts.
+- `veloran doctor --preset codex-max` returns `OK`.
 - Observability smoke script returns success for logs, metrics, and traces queries.
 - Generated MCP configuration includes both Chrome DevTools and observability servers with project-local paths.
 - Rerunning init without `--force` is idempotent; rerunning with `--force` refreshes managed/generated files as documented.
@@ -301,7 +301,7 @@ Expected high-signal outcomes:
 
 If a milestone fails halfway:
 
-- For file-generation issues, rerun `execplans init --preset codex-max --force` after fixing code.
+- For file-generation issues, rerun `veloran init --preset codex-max --force` after fixing code.
 - For observability runtime issues, stop and clean with:
 
     docker compose -f .agent/harness/observability/docker-compose.yml down -v

@@ -78,7 +78,7 @@ function printCodexMaxNextSteps(io: InitIo, promptPath: string): void {
   const clipboardCommand = resolveClipboardCommand(promptPath);
 
   io.log("");
-  io.log("Codex-Promax is ready.");
+  io.log("Veloran is ready.");
   io.log("");
 
   if (clipboardCommand) {
@@ -97,7 +97,7 @@ function printCodexMaxNextSteps(io: InitIo, promptPath: string): void {
   io.log("If the start path is unclear, the agent will inspect first and then ask you for the right local command.");
   io.log("");
   io.log("Optional check after setup:");
-  io.log("  npx -y codex-promax@latest doctor");
+  io.log("  npx -y veloran@latest doctor");
 }
 
 function buildPresetTemplateEntries(root: string, preset: string): TemplateCopyEntry[] {
@@ -136,10 +136,16 @@ export async function runInit(options: CommonOptions, io: InitIo = defaultIo): P
   ensureDirectory(config.planDirPath, actionContext);
   ensureDirectory(config.execplansDirPath, actionContext);
 
-  if (config.assistants.needsAgentSkills) {
+  if (config.assistants.needsSharedSkills) {
     ensureDirectory(config.skillsDirPath, actionContext);
     ensureDirectory(path.dirname(config.execplanCreateSkillPath), actionContext);
     ensureDirectory(path.dirname(config.execplanExecuteSkillPath), actionContext);
+  }
+
+  if (config.assistants.needsClaudeSkills) {
+    ensureDirectory(config.claudeSkillsDirPath, actionContext);
+    ensureDirectory(path.dirname(config.claudeExecplanCreateSkillPath), actionContext);
+    ensureDirectory(path.dirname(config.claudeExecplanExecuteSkillPath), actionContext);
   }
 
   writeIfMissingOrForce(config.plansFilePath, readTemplate("PLANS.md"), actionContext, config.force);
@@ -168,7 +174,7 @@ export async function runInit(options: CommonOptions, io: InitIo = defaultIo): P
     );
   }
 
-  if (config.assistants.needsAgentSkills) {
+  if (config.assistants.needsSharedSkills) {
     writeIfMissingOrForce(
       config.execplanCreateSkillPath,
       readTemplate("skills/execplan-create.SKILL.md"),
@@ -177,6 +183,21 @@ export async function runInit(options: CommonOptions, io: InitIo = defaultIo): P
     );
     writeIfMissingOrForce(
       config.execplanExecuteSkillPath,
+      readTemplate("skills/execplan-execute.SKILL.md"),
+      actionContext,
+      config.force,
+    );
+  }
+
+  if (config.assistants.needsClaudeSkills) {
+    writeIfMissingOrForce(
+      config.claudeExecplanCreateSkillPath,
+      readTemplate("skills/execplan-create.SKILL.md"),
+      actionContext,
+      config.force,
+    );
+    writeIfMissingOrForce(
+      config.claudeExecplanExecuteSkillPath,
       readTemplate("skills/execplan-execute.SKILL.md"),
       actionContext,
       config.force,

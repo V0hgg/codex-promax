@@ -13,10 +13,10 @@ Update this file after each full harness validation run.
 ## Commands Executed
 
 ```bash
-codex-promax doctor
+veloran doctor
 docker compose -f .agent/harness/observability/docker-compose.yml up -d
 bash .agent/harness/observability/smoke.sh
-codex-promax prompt telemetry
+veloran prompt telemetry
 docker compose -f .agent/harness/observability/docker-compose.yml down -v
 ```
 

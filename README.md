@@ -1,20 +1,20 @@
-# codex-promax
+# Veloran
 
-`codex-promax` scaffolds an agent-ready repo structure for ExecPlans, shared prompts, native coding-assistant config, and optional local observability.
+`veloran` scaffolds an agent-ready repo structure for ExecPlans, shared prompts, native coding-assistant config, and optional local observability.
 
 ## Install
 
 Use the latest version without installing globally:
 
 ```bash
-npx -y codex-promax@latest init
+npx -y veloran@latest init
 ```
 
 Or install it globally:
 
 ```bash
-npm i -g codex-promax
-codex-promax init
+npm i -g veloran
+veloran init
 ```
 
 ## Install With Your Coding Agent
@@ -22,8 +22,8 @@ codex-promax init
 Copy this prompt into your coding agent in the target repository:
 
 ```text
-Install Codex-Promax for this repository end-to-end.
-https://github.com/V0hgg/codex-promax/blob/main/docs/AGENT_INSTALL.md
+Install Veloran for this repository end-to-end.
+https://github.com/V0hgg/veloran/blob/main/docs/AGENT_INSTALL.md
 ```
 
 ## Quick Start
@@ -31,7 +31,7 @@ https://github.com/V0hgg/codex-promax/blob/main/docs/AGENT_INSTALL.md
 Run this from the root of the repository you want to set up:
 
 ```bash
-npx -y codex-promax@latest init
+npx -y veloran@latest init
 ```
 
 By default this creates the `codex-max` scaffold, which includes:
@@ -44,53 +44,53 @@ By default this creates the `codex-max` scaffold, which includes:
 After the first run, the usual next steps are:
 
 ```bash
-npx -y codex-promax@latest prompt telemetry
+npx -y veloran@latest prompt telemetry
 ```
 
 Copy that output, paste it into your coding agent in the same repo, and let the agent wire the local telemetry setup around your real dev or cluster start path. When the agent finishes, you can confirm the scaffold with:
 
 ```bash
-npx -y codex-promax@latest doctor
+npx -y veloran@latest doctor
 ```
 
 ## Common Commands
 
-If you installed `codex-promax` globally, you can drop the `npx -y codex-promax@latest` prefix in the commands below.
+If you installed `veloran` globally, you can drop the `npx -y veloran@latest` prefix in the commands below.
 
 Initialize or refresh the scaffold:
 
 ```bash
-npx -y codex-promax@latest init
+npx -y veloran@latest init
 ```
 
 Check scaffold health:
 
 ```bash
-npx -y codex-promax@latest doctor
+npx -y veloran@latest doctor
 ```
 
 Print a prompt for creating an ExecPlan:
 
 ```bash
-npx -y codex-promax@latest prompt plan "Add feature X"
+npx -y veloran@latest prompt plan "Add feature X"
 ```
 
 Print the same install prompt shown above:
 
 ```bash
-npx -y codex-promax@latest prompt install
+npx -y veloran@latest prompt install
 ```
 
 Print a prompt for executing an ExecPlan:
 
 ```bash
-npx -y codex-promax@latest prompt exec .agent/execplans/my-plan.md
+npx -y veloran@latest prompt exec .agent/execplans/my-plan.md
 ```
 
 Print the telemetry onboarding prompt again later:
 
 ```bash
-npx -y codex-promax@latest prompt telemetry
+npx -y veloran@latest prompt telemetry
 ```
 
 ## Presets And Assistant Targets
@@ -98,26 +98,27 @@ npx -y codex-promax@latest prompt telemetry
 Use the full scaffold, which is the default:
 
 ```bash
-npx -y codex-promax@latest init --preset codex-max
+npx -y veloran@latest init --preset codex-max
 ```
 
 Use the lighter scaffold:
 
 ```bash
-npx -y codex-promax@latest init --preset standard
+npx -y veloran@latest init --preset standard
 ```
 
 Target specific assistants:
 
 ```bash
-npx -y codex-promax@latest init --assistants opencode
-npx -y codex-promax@latest init --assistants agents
-npx -y codex-promax@latest init --assistants all
+npx -y veloran@latest init --assistants opencode
+npx -y veloran@latest init --assistants agents
+npx -y veloran@latest init --assistants all
 ```
 
 Notes:
 
 - `opencode` scaffolds `AGENTS.md` plus shared `.agents/skills` entries for OpenCode.
+- `claude` scaffolds `CLAUDE.md` plus native `.claude/skills` entries for Claude Code.
 - `agents` scaffolds `AGENTS.md` only for other `AGENTS.md`-compatible coding apps.
 - `common` is an alias for `agents`.
 - `all` includes `codex`, `claude`, `augment`, `opencode`, and generic `AGENTS.md` support.
@@ -125,9 +126,10 @@ Notes:
 Useful flags:
 
 ```bash
-npx -y codex-promax@latest init --dry-run
-npx -y codex-promax@latest init --verbose
-npx -y codex-promax@latest init --force
+npx -y veloran@latest init --dry-run
+npx -y veloran@latest init --verbose
+npx -y veloran@latest init --force
+npx -y veloran@latest init --claude-skills-dir .claude/skills
 ```
 
 - `--dry-run` shows what would change without writing files.
@@ -155,7 +157,7 @@ The smoke check validates the local ingestion path for logs, metrics, and traces
 The quickest flow is:
 
 ```bash
-npx -y codex-promax@latest prompt telemetry
+npx -y veloran@latest prompt telemetry
 ```
 
 Then copy the output, paste it into your coding agent in the repo, and wait for it to finish.
@@ -165,25 +167,25 @@ Then copy the output, paste it into your coding agent in the repo, and wait for 
 If you use `npx`, just keep calling the latest version:
 
 ```bash
-npx -y codex-promax@latest init
+npx -y veloran@latest init
 ```
 
 If you installed globally, update with:
 
 ```bash
-npm i -g codex-promax@latest
+npm i -g veloran@latest
 ```
 
 To refresh an existing repository scaffold after updating the package:
 
 ```bash
-npx -y codex-promax@latest init
+npx -y veloran@latest init
 ```
 
 If you want to overwrite managed scaffold files with the latest version:
 
 ```bash
-npx -y codex-promax@latest init --force
+npx -y veloran@latest init --force
 ```
 
 ## Help
@@ -191,8 +193,8 @@ npx -y codex-promax@latest init --force
 See CLI help at any time:
 
 ```bash
-npx -y codex-promax@latest --help
-npx -y codex-promax@latest init --help
-npx -y codex-promax@latest prompt --help
-npx -y codex-promax@latest doctor --help
+npx -y veloran@latest --help
+npx -y veloran@latest init --help
+npx -y veloran@latest prompt --help
+npx -y veloran@latest doctor --help
 ```

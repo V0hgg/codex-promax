@@ -24,7 +24,7 @@ bash .agent/harness/observability/smoke.sh
 ## Tool Expectations
 
 - `query_logs` should return records for the chained fixture services such as `gateway-api`, `workflow-api`, and `data-api`.
-- `query_metrics` should return records for `codex_promax_fixture_requests_total`.
+- `query_metrics` should return records for `veloran_fixture_requests_total`.
 - `summarize_service_metrics` should return service-labeled request, latency, status, and downstream metrics.
 - `list_trace_services` and `list_trace_operations` should show the traced services and their `*.invoke` operations.
 - `find_traces` or service-based `query_traces` should return real trace summaries for the chained fixture.

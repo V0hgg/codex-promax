@@ -23,9 +23,12 @@ export async function runDoctor(options: CommonOptions, io: DoctorIo = defaultIo
     claudeFilePath: config.claudeFilePath,
     execplanCreateSkillPath: config.execplanCreateSkillPath,
     execplanExecuteSkillPath: config.execplanExecuteSkillPath,
+    claudeExecplanCreateSkillPath: config.claudeExecplanCreateSkillPath,
+    claudeExecplanExecuteSkillPath: config.claudeExecplanExecuteSkillPath,
     checkAgentsFile: config.assistants.needsAgentsFile,
     checkClaudeFile: config.assistants.needsClaudeFile,
-    checkAgentSkills: config.assistants.needsAgentSkills,
+    checkSharedSkills: config.assistants.needsSharedSkills,
+    checkClaudeSkills: config.assistants.needsClaudeSkills,
   });
 
   if (fixes.length === 0) {
